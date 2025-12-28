@@ -1,0 +1,7 @@
+.pio
+.vscode/.browserslistrc
+.vscode/extensions.json
+.vscode/launch.json
+.vscode/*.pyc
+__pycache__/
+.DS_Store
