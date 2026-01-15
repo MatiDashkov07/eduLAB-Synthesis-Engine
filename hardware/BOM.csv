@@ -1,0 +1,9 @@
+Designator,Component,Value,Description,Quantity
+U1,ESP32-S3-DevKitC-1,N/A,MCU Development Board,1
+Disp1,SSD1306 OLED,N/A,0.91 inch I2C Display 128x32,1
+Q1,2N2222,N/A,NPN BJT Transistor (TO-92),1
+D1,1N4007,N/A,Flyback Diode,1
+SPK1,Piezo Buzzer,N/A,Passive Buzzer Module,1
+R1,Resistor,1k,Base Resistor,1
+SW1,Rotary Encoder,KY-040,Encoder with Push Button,1
+RV1,Potentiometer,10k,Linear Potentiometer,2
