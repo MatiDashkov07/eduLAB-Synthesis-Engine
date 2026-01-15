@@ -1,4 +1,5 @@
 .pio
+.vscode/
 .vscode/.browserslistrc
 .vscode/extensions.json
 .vscode/launch.json
