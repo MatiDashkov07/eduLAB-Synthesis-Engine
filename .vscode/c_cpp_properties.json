@@ -8,11 +8,11 @@
         {
             "name": "PlatformIO",
             "includePath": [
-                "C:/Users/mati/Desktop/Journy-Lab/Journey-Lab/Phase_3_Firmware/ESP32/The Sonic Oscillator/include",
-                "C:/Users/mati/Desktop/Journy-Lab/Journey-Lab/Phase_3_Firmware/ESP32/The Sonic Oscillator/src",
-                "C:/Users/mati/Desktop/Journy-Lab/Journey-Lab/Phase_3_Firmware/ESP32/The Sonic Oscillator/.pio/libdeps/esp32-s3-devkitc-1/Adafruit SSD1306",
-                "C:/Users/mati/Desktop/Journy-Lab/Journey-Lab/Phase_3_Firmware/ESP32/The Sonic Oscillator/.pio/libdeps/esp32-s3-devkitc-1/Adafruit GFX Library",
-                "C:/Users/mati/Desktop/Journy-Lab/Journey-Lab/Phase_3_Firmware/ESP32/The Sonic Oscillator/.pio/libdeps/esp32-s3-devkitc-1/Adafruit BusIO",
+                "C:/Users/mati/Desktop/Journy-Lab/Journey-Lab/Phase_3_Firmware/ESP32/eduLAB-Synthesis-Engine/include",
+                "C:/Users/mati/Desktop/Journy-Lab/Journey-Lab/Phase_3_Firmware/ESP32/eduLAB-Synthesis-Engine/src",
+                "C:/Users/mati/Desktop/Journy-Lab/Journey-Lab/Phase_3_Firmware/ESP32/eduLAB-Synthesis-Engine/.pio/libdeps/esp32-s3-devkitc-1/Adafruit SSD1306",
+                "C:/Users/mati/Desktop/Journy-Lab/Journey-Lab/Phase_3_Firmware/ESP32/eduLAB-Synthesis-Engine/.pio/libdeps/esp32-s3-devkitc-1/Adafruit GFX Library",
+                "C:/Users/mati/Desktop/Journy-Lab/Journey-Lab/Phase_3_Firmware/ESP32/eduLAB-Synthesis-Engine/.pio/libdeps/esp32-s3-devkitc-1/Adafruit BusIO",
                 "C:/Users/mati/.platformio/packages/framework-arduinoespressif32/libraries/SPI/src",
                 "C:/Users/mati/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src",
                 "C:/Users/mati/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/newlib/platform_include",
@@ -250,11 +250,11 @@
             "browse": {
                 "limitSymbolsToIncludedHeaders": true,
                 "path": [
-                    "C:/Users/mati/Desktop/Journy-Lab/Journey-Lab/Phase_3_Firmware/ESP32/The Sonic Oscillator/include",
-                    "C:/Users/mati/Desktop/Journy-Lab/Journey-Lab/Phase_3_Firmware/ESP32/The Sonic Oscillator/src",
-                    "C:/Users/mati/Desktop/Journy-Lab/Journey-Lab/Phase_3_Firmware/ESP32/The Sonic Oscillator/.pio/libdeps/esp32-s3-devkitc-1/Adafruit SSD1306",
-                    "C:/Users/mati/Desktop/Journy-Lab/Journey-Lab/Phase_3_Firmware/ESP32/The Sonic Oscillator/.pio/libdeps/esp32-s3-devkitc-1/Adafruit GFX Library",
-                    "C:/Users/mati/Desktop/Journy-Lab/Journey-Lab/Phase_3_Firmware/ESP32/The Sonic Oscillator/.pio/libdeps/esp32-s3-devkitc-1/Adafruit BusIO",
+                    "C:/Users/mati/Desktop/Journy-Lab/Journey-Lab/Phase_3_Firmware/ESP32/eduLAB-Synthesis-Engine/include",
+                    "C:/Users/mati/Desktop/Journy-Lab/Journey-Lab/Phase_3_Firmware/ESP32/eduLAB-Synthesis-Engine/src",
+                    "C:/Users/mati/Desktop/Journy-Lab/Journey-Lab/Phase_3_Firmware/ESP32/eduLAB-Synthesis-Engine/.pio/libdeps/esp32-s3-devkitc-1/Adafruit SSD1306",
+                    "C:/Users/mati/Desktop/Journy-Lab/Journey-Lab/Phase_3_Firmware/ESP32/eduLAB-Synthesis-Engine/.pio/libdeps/esp32-s3-devkitc-1/Adafruit GFX Library",
+                    "C:/Users/mati/Desktop/Journy-Lab/Journey-Lab/Phase_3_Firmware/ESP32/eduLAB-Synthesis-Engine/.pio/libdeps/esp32-s3-devkitc-1/Adafruit BusIO",
                     "C:/Users/mati/.platformio/packages/framework-arduinoespressif32/libraries/SPI/src",
                     "C:/Users/mati/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src",
                     "C:/Users/mati/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/newlib/platform_include",
