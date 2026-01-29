@@ -2,6 +2,7 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include "Potentiometer/Potentiometer.h"
 
 // ==========================================
 // 1. HARDWARE CONFIGURATION
@@ -29,52 +30,7 @@ const int LEDC_RESOLUTION = 8;
 const int BASE_FREQ       = 5000;
 const int MIN_FREQ_SAFE   = 350; // הוחזר ל-350Hz ליציבות
 
-// ==========================================
-// 2. CLASS: SMOOTH POTENTIOMETER (EMA FILTER)
-// ==========================================
-class Potentiometer {
-  private:
-    int pin;
-    float filteredValue;
-    float alpha; 
-    int lastStableValue;
-    int threshold; 
 
-  public:
-    // Alpha 0.15 = תגובה מהירה יותר
-    // Threshold 40 = סינון אגרסיבי יותר של רעשי Breadboard
-    Potentiometer(int p, float a = 0.15, int th = 40) { 
-      pin = p;
-      alpha = a;
-      threshold = th;
-      filteredValue = 0;
-      lastStableValue = 0;
-    }
-
-    void begin() {
-       pinMode(pin, INPUT);
-       filteredValue = analogRead(pin);
-       lastStableValue = filteredValue;
-    }
-
-    bool update() {
-      int raw = analogRead(pin);
-      
-      // EMA Filter
-      filteredValue = (filteredValue * (1.0 - alpha)) + (raw * alpha);
-
-      // Hysteresis Check
-      if (abs((int)filteredValue - lastStableValue) > threshold) {
-        lastStableValue = (int)filteredValue;
-        return true; 
-      }
-      return false; 
-    }
-
-    int getValue() {
-      return lastStableValue;
-    }
-};
 
 // יצירת אובייקטים עם הפרמטרים המעודכנים
 Potentiometer potPitch(POT_PIN_PITCH, 0.15, 40); 
