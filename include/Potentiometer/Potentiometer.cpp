@@ -5,8 +5,6 @@
 // 2. CLASS: SMOOTH POTENTIOMETER (EMA FILTER)
 // ==========================================
 
-    // Alpha 0.15 = תגובה מהירה יותר
-    // Threshold 40 = סינון אגרסיבי יותר של רעשי Breadboard
     Potentiometer::Potentiometer(int p, float a, int th) { 
       pin = p;
       alpha = a;
