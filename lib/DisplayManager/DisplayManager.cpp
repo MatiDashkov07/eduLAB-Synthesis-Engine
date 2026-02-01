@@ -1,6 +1,6 @@
 #include "DisplayManager.h"
-#include "StateMachine/StateMachine.h" 
-#include "Menu/Menu.h"                  
+#include "StateMachine.h" 
+#include "Menu.h"                  
 
 //constants
 #define SCREEN_WIDTH 128

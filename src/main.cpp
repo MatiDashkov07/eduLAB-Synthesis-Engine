@@ -1,10 +1,10 @@
 #include <Arduino.h>
-#include "StateMachine/StateMachine.h"
-#include "DisplayManager/DisplayManager.h"
-#include "AudioEngine/AudioEngine.h"
-#include "Button/Button.h"
-#include "RotaryEncoder/RotaryEncoder.h"
-#include "Potentiometer/Potentiometer.h"
+#include "StateMachine.h"
+#include "DisplayManager.h"
+#include "AudioEngine.h"
+#include "Button.h"
+#include "RotaryEncoder.h"
+#include "Potentiometer.h"
 
 // ==========================================
 // HARDWARE CONFIGURATION

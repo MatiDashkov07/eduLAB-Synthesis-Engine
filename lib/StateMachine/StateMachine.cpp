@@ -61,3 +61,7 @@ const Menu& StateMachine::getMenu() const {
 void StateMachine::resetTimeout() {
     lastInteractionTime = millis();
 }
+
+StateMachine::State StateMachine::getState() const {
+    return currentState;
+}

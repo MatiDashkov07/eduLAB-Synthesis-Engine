@@ -1,6 +1,6 @@
 #include "AudioEngine.h"
-#include "StateMachine/StateMachine.h"
-#include "Potentiometer/Potentiometer.h"
+#include "StateMachine.h"
+#include "Potentiometer.h"
 #include <Arduino.h>
 
 AudioEngine::AudioEngine(int pin)
