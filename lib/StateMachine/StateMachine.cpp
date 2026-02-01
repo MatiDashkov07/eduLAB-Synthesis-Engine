@@ -2,26 +2,24 @@
 #include <Arduino.h>
 
 StateMachine::StateMachine() 
-    : currentState(MENU), lastInteractionTime(0) {
+    : currentState(MUTE), lastInteractionTime(0) {
     lastInteractionTime = millis();
 }
 
 void StateMachine::update() {
-    // Check for timeout to return to PLAYING state
     if (currentState == MENU && (millis() - lastInteractionTime > MENU_TIMEOUT)) {
         currentState = PLAYING;
     }
 }
 
 void StateMachine::onEncoderMoved(int direction) {
-    //MUTED: ignore encoder (must-long press to unmute)
+    // ✅ MUTED: ignore encoder
     if (currentState == MUTE) {
         return;
     }
 
     currentState = MENU;
 
-    //Navigate menu
     if (direction > 0) {
         menu.nextItem();
     } else if (direction < 0) {
@@ -32,17 +30,17 @@ void StateMachine::onEncoderMoved(int direction) {
 }
 
 void StateMachine::onButtonShortPress() {
-    //MUTED: ignore short press (must-long press to unmute)
+    // ✅ תיקון: רק ב-MENU מגיב
     if (currentState == MENU) {
         menu.selectCurrentItem();
         currentState = PLAYING;
+        resetTimeout();
     }
-
-    //PLAYING/MUTE: do nothing
+    // MUTE/PLAYING: לא עושים כלום
 }
 
 void StateMachine::onButtonLongPress() {
-    //Toggle MUTE state
+    // ✅ Toggle MUTE ↔ PLAYING
     if (currentState == MUTE) {
         currentState = PLAYING;
     } else {

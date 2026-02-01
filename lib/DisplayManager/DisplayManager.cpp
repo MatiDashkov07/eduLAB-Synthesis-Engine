@@ -29,7 +29,7 @@ void DisplayManager::begin() {
 
 void DisplayManager::update(const StateMachine& stateMachine, int frequency) {
     if(millis() - lastUpdateTime < UPDATE_INTERVAL) {
-        return; // Not time to update yet
+        return;
     }
     lastUpdateTime = millis();
 
@@ -44,7 +44,7 @@ void DisplayManager::update(const StateMachine& stateMachine, int frequency) {
         renderMenu(stateMachine.getMenu());
     } 
     else { // PLAYING
-        renderPlaying(stateMachine.getMenu(), frequency);
+        renderPlaying(stateMachine.getMenu().getSelectedMode(), frequency);
     }
     display.display();
 }
@@ -72,10 +72,15 @@ void DisplayManager::renderMenu(const Menu& menu) {
     }
 }
 
-void DisplayManager::renderPlaying(const Menu& menu, int frequency) {
+void DisplayManager::renderPlaying(int selectedMode, int frequency) {
     display.setTextSize(1); 
-    display.setCursor(0, 0); 
-    display.print(menu.getItem(menu.getSelectedMode()));
+    display.setCursor(0, 0);
+    
+    
+    const char* modeNames[] = {"SQUARE", "SAW", "TRIANGLE", "NOISE"};
+    if (selectedMode >= 0 && selectedMode < 4) {
+        display.print(modeNames[selectedMode]);
+    }
     
     String freqStr = String(frequency) + " Hz";
     int16_t x1, y1; 
@@ -84,11 +89,15 @@ void DisplayManager::renderPlaying(const Menu& menu, int frequency) {
     display.setCursor(128 - w, 0); 
     display.print(freqStr);
     
-    drawWaveIcon(menu.getSelectedMode(), 2, 14); 
+    drawWaveIcon(selectedMode, 2, 14); 
     
     display.drawRect(30, 14, 90, 14, SSD1306_WHITE);
-    int barW = map(frequency    , 0, 8000, 0, 86); // assuming max frequency is 8000Hz
+    
+    int maxFreq = (selectedMode == Menu::NOISE) ? 5000 : 2000;
+    int barW = map(frequency, 350, maxFreq, 0, 86);
+    if (barW < 0) barW = 0;
     if (barW > 86) barW = 86;
+    
     display.fillRect(32, 16, barW, 10, SSD1306_WHITE);  
 }
 
@@ -137,4 +146,3 @@ void DisplayManager::drawWaveIcon(int mode, int x, int y) {
             break;
     }
 }
-
