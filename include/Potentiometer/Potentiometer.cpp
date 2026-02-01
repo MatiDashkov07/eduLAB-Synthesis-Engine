@@ -33,6 +33,6 @@
       return false; 
     }
 
-    int Potentiometer::getValue() {
+    int Potentiometer::getValue() const{
       return lastStableValue;
     }

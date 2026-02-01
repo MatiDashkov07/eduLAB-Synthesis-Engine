@@ -18,7 +18,7 @@ class Potentiometer
         Potentiometer(int p, float a = 0.15, int th = 40); 
         void begin();
         bool update();
-        int getValue();
+        int getValue() const;
     };
 
 #endif
