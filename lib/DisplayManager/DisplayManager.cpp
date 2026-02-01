@@ -22,9 +22,18 @@ void DisplayManager::begin() {
     }
     
     display.clearDisplay();
-    drawCenteredText("SONIC LAB S3", 10, 1);
+    display.setTextSize(2);
+    display.setTextColor(SSD1306_WHITE);
+    display.setCursor(10, 8);
+    display.println("eduLAB");
+    display.setTextSize(1);
+    display.setCursor(20, 24);
+    display.println("v3.8 OOP");
     display.display();
-    delay(1000);
+    delay(2000);
+    display.clearDisplay();
+    
+    renderMuted();
 }
 
 void DisplayManager::update(const StateMachine& stateMachine, int frequency) {

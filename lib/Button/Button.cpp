@@ -52,7 +52,7 @@
     }
 
     bool Button::wasLongPressed() {
-      if (longPressHandled) {
+      if (longPressHandled && !wasPressed) {
         longPressHandled = false; 
         return true;
       }

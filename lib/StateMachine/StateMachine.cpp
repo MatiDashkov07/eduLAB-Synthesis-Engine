@@ -7,17 +7,14 @@ StateMachine::StateMachine()
 }
 
 void StateMachine::update() {
-    if (currentState == MENU && (millis() - lastInteractionTime > MENU_TIMEOUT)) {
+    if (currentState == MENU && 
+        menu.getSelectedMode() >= 0 &&  
+        (millis() - lastInteractionTime > MENU_TIMEOUT)) {
         currentState = PLAYING;
     }
 }
 
 void StateMachine::onEncoderMoved(int direction) {
-    // ✅ MUTED: ignore encoder
-    if (currentState == MUTE) {
-        return;
-    }
-
     currentState = MENU;
 
     if (direction > 0) {
@@ -30,17 +27,14 @@ void StateMachine::onEncoderMoved(int direction) {
 }
 
 void StateMachine::onButtonShortPress() {
-    // ✅ תיקון: רק ב-MENU מגיב
     if (currentState == MENU) {
         menu.selectCurrentItem();
         currentState = PLAYING;
         resetTimeout();
     }
-    // MUTE/PLAYING: לא עושים כלום
 }
 
 void StateMachine::onButtonLongPress() {
-    // ✅ Toggle MUTE ↔ PLAYING
     if (currentState == MUTE) {
         currentState = PLAYING;
     } else {
