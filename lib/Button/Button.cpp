@@ -32,11 +32,14 @@
         shortPressReady = false;
         }
       }
+
       if (wasPressed && reading == LOW) {
         if ((millis() - pressStartTime > longPressThreshold) && !longPressHandled) {
           longPressHandled = true;
           longPressTriggered = true;
+        }
       }
+      
       if (reading == HIGH && wasPressed) {
         wasPressed = false;
         if (!longPressHandled) {
@@ -44,7 +47,7 @@
         }
       }
     }
-  }
+  
     bool Button::wasShortPressed() {
       if (shortPressReady) {
         shortPressReady = false; 
