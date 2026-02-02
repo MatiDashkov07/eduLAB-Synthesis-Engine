@@ -15,6 +15,10 @@ void StateMachine::update() {
 }
 
 void StateMachine::onEncoderMoved(int direction) {
+    if (currentState == MUTE) {
+        return;
+    }
+
     currentState = MENU;
 
     if (direction > 0) {
@@ -36,7 +40,11 @@ void StateMachine::onButtonShortPress() {
 
 void StateMachine::onButtonLongPress() {
     if (currentState == MUTE) {
-        currentState = PLAYING;
+        if (menu.getSelectedMode() == -1) {
+            currentState = MENU;
+        } else {
+            currentState = PLAYING;
+        }
     } else {
         currentState = MUTE;
     }

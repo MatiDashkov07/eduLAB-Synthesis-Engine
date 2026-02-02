@@ -20,10 +20,6 @@ void AudioEngine::update(const StateMachine &stateMachine, const Potentiometer &
         mute();
         return;
     }
-    
-    if(currentState == StateMachine::MENU) {
-        return;
-    }
 
     const Menu &menu = stateMachine.getMenu();
     int selectedMode = menu.getSelectedMode();
@@ -59,6 +55,7 @@ void AudioEngine::playFeedbackTone(int frequency, int duration) {
     ledcWrite(LEDC_CHANNEL, 0); 
     forceUpdate = true; 
     lastAppliedFreq = 0; 
+    lastAppliedDuty = 0;
 }
 
 void AudioEngine::generateSquare(int frequency, int duty) {

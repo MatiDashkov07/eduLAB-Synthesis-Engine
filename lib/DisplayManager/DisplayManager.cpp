@@ -22,13 +22,9 @@ void DisplayManager::begin() {
     }
     
     display.clearDisplay();
-    display.setTextSize(2);
     display.setTextColor(SSD1306_WHITE);
-    display.setCursor(10, 8);
-    display.println("eduLAB");
-    display.setTextSize(1);
-    display.setCursor(20, 24);
-    display.println("v3.8 OOP");
+    drawCenteredText("eduLAB", 8, 2);    
+    drawCenteredText("v3.8 OOP", 24, 1);   
     display.display();
     delay(2000);
     display.clearDisplay();

@@ -11,6 +11,7 @@ class Button
         unsigned long longPressThreshold;
         bool wasPressed;           // state tracking
         bool longPressHandled;
+        bool longPressTriggered;
         bool shortPressReady;
 
     public:

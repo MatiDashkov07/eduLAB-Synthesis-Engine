@@ -10,6 +10,7 @@
       longPressThreshold = longPressTime;
       wasPressed = false;
       longPressHandled = false;
+      longPressTriggered = false;
       pressStartTime = 0;
       shortPressReady = false;
     }
@@ -27,13 +28,14 @@
             wasPressed = true;
         pressStartTime = millis();
         longPressHandled = false;
+        longPressTriggered = false;
         shortPressReady = false;
         }
       }
       if (wasPressed && reading == LOW) {
         if ((millis() - pressStartTime > longPressThreshold) && !longPressHandled) {
           longPressHandled = true;
-        }
+          longPressTriggered = true;
       }
       if (reading == HIGH && wasPressed) {
         wasPressed = false;
@@ -42,7 +44,7 @@
         }
       }
     }
-
+  }
     bool Button::wasShortPressed() {
       if (shortPressReady) {
         shortPressReady = false; 
@@ -52,8 +54,8 @@
     }
 
     bool Button::wasLongPressed() {
-      if (longPressHandled && !wasPressed) {
-        longPressHandled = false; 
+      if (longPressTriggered) {
+        longPressTriggered = false; 
         return true;
       }
       return false;
