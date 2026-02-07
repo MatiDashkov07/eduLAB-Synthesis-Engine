@@ -12,16 +12,18 @@
 const int SW_PIN        = 15;
 const int POT_PIN_PITCH = 1;
 const int POT_PIN_TONE  = 2;
-const int BUZZER_PIN    = 16;
 const int PIN_DT        = 7;
 const int PIN_CLK       = 6;
+const int I2S_BCK_PIN = 38;
+const int I2S_DIN_PIN = 39;
+const int I2S_LRCK_PIN = 40;
 
 // ==========================================
 // OBJECT INSTANCES
 // ==========================================
 StateMachine stateMachine;
 DisplayManager displayManager;
-AudioEngine audioEngine(BUZZER_PIN);
+AudioEngine audioEngine{I2S_BCK_PIN, I2S_LRCK_PIN, I2S_DIN_PIN};
 
 Button button(SW_PIN);
 RotaryEncoder encoder(PIN_CLK, PIN_DT);
@@ -42,7 +44,7 @@ void setup() {
     potTone.begin();
     
     displayManager.begin();  // I2C + OLED + Splash screen
-    audioEngine.begin();     // LEDC setup
+    audioEngine.begin();    // I2S + Audio setup
     
     Serial.println("eduLAB v3.8 - OOP Refactored");
 }
@@ -79,8 +81,8 @@ void loop() {
     
     // 5. CALCULATE FREQUENCY FOR DISPLAY
     int selectedMode = stateMachine.getMenu().getSelectedMode();
-    int maxFreq = (selectedMode == Menu::NOISE) ? 5000 : 2000;
-    int currentFrequency = map(potPitch.getValue(), 0, 4095, 350, maxFreq);
+    int maxFreq = (selectedMode == Menu::NOISE) ? 5000 : 20000;
+    int currentFrequency = map(potPitch.getValue(), 0, 4095, 20, maxFreq);
     
     // 6. UPDATE OUTPUTS
     displayManager.update(stateMachine, currentFrequency);

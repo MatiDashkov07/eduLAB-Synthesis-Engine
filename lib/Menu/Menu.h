@@ -3,10 +3,16 @@
 
 class Menu {
 public:
-    enum WaveMode { SQUARE = 0, SAW = 1, TRIANGLE = 2, NOISE = 3 };
+    enum WaveformMode {
+    SINE = 0,
+    TRIANGLE = 1,
+    SQUARE = 2,
+    SAW = 3,
+    NOISE = 4
+};
     
 private:
-    const char* items[4] = {"SQUARE", "SAW", "TRIANGLE", "NOISE"};
+    const char* items[5] = {"SINE", "TRIANGLE", "SQUARE", "SAW", "NOISE"};
     int currentIndex;
     int selectedMode;
 
