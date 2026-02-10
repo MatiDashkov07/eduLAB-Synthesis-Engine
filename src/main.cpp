@@ -14,9 +14,9 @@ const int POT_PIN_PITCH = 1;
 const int POT_PIN_TONE  = 2;
 const int PIN_DT        = 7;
 const int PIN_CLK       = 6;
-const int I2S_BCK_PIN = 38;
-const int I2S_DIN_PIN = 39;
-const int I2S_LRCK_PIN = 40;
+const int I2S_BCK_PIN = 39;
+const int I2S_DIN_PIN = 40;
+const int I2S_LRCK_PIN = 38;
 
 // ==========================================
 // OBJECT INSTANCES

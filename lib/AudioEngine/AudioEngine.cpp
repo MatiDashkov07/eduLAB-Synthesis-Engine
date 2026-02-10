@@ -44,16 +44,19 @@ void AudioEngine::begin() {
     waveforms[3] = new SawWave();
     waveforms[4] = new NoiseWave();
 
+    currentWaveform = waveforms[0];
+
     Serial.println("I2S Initialized!");
 }
 
 void AudioEngine::update(const StateMachine &stateMachine, const Potentiometer &potPitch, const Potentiometer &potTone) {
     StateMachine::State currentState = stateMachine.getState();
+    size_t bytes_written;
 
     if (currentState == StateMachine::MUTE) {
         setMasterVolume(0);
         fillBuffer();
-        i2s_write(I2S_NUM_0, audioBuffer, sizeof(audioBuffer), NULL, portMAX_DELAY);
+        i2s_write(I2S_NUM_0, audioBuffer, sizeof(audioBuffer), &bytes_written, portMAX_DELAY);
         return;
     }
 
@@ -62,16 +65,16 @@ void AudioEngine::update(const StateMachine &stateMachine, const Potentiometer &
     if (selectedMode == -1) {
         setMasterVolume(0);
         fillBuffer();
-        i2s_write(I2S_NUM_0, audioBuffer, sizeof(audioBuffer), NULL, portMAX_DELAY);
+        i2s_write(I2S_NUM_0, audioBuffer, sizeof(audioBuffer), &bytes_written, portMAX_DELAY);
         return;
     }
     if (selectedMode >= 0 && selectedMode < 5) {
         currentWaveform = waveforms[selectedMode];
     }
     setFrequency(map(potPitch.getValue(), 0, 4095, 20, 20000));
-    setAmplitude(map(potTone.getValue(), 0, 4095, 0, 1.0));
+    //setAmplitude(potTone.getValue() / 4095.0);
     fillBuffer();
-    i2s_write(I2S_NUM_0, audioBuffer, sizeof(audioBuffer), NULL, portMAX_DELAY);
+    i2s_write(I2S_NUM_0, audioBuffer, sizeof(audioBuffer), &bytes_written, portMAX_DELAY);
 }
 
 void AudioEngine::setWaveform(WaveformGenerator* waveform) {
@@ -98,16 +101,16 @@ void AudioEngine::fillBuffer() {
     }
 
     if (audioState == FEEDBACK_TONE) {
-        fillFeedbackBuffer();  // ← פונקציה נפרדת!
+        fillFeedbackBuffer();  
         return;
     }
 
-    for (int i = 0; i < BUFFER_SIZE / 2; i++) {  // ← חצי מהbuffer
+    for (int i = 0; i < BUFFER_SIZE / 2; i++) {  
         float sample = currentWaveform->getSample(phase) * amplitude * masterVolume;
         int16_t sampleValue = (int16_t)(sample * 32767);
         
-        audioBuffer[i * 2] = sampleValue;      // ← Left
-        audioBuffer[i * 2 + 1] = sampleValue;  // ← Right (אותו ערך - מונו)
+        audioBuffer[i * 2] = sampleValue;      
+        audioBuffer[i * 2 + 1] = sampleValue;  
         
         phase += phaseIncrement;
         if (phase >= 2*PI) {

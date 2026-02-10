@@ -82,8 +82,8 @@ void DisplayManager::renderPlaying(int selectedMode, int frequency) {
     display.setCursor(0, 0);
     
     
-    const char* modeNames[] = {"SQUARE", "SAW", "TRIANGLE", "NOISE"};
-    if (selectedMode >= 0 && selectedMode < 4) {
+    const char* modeNames[] = {"SIN", "TRIANGLE", "SQUARE", "SAW", "NOISE"};
+    if (selectedMode >= 0 && selectedMode < 5 ) {
         display.print(modeNames[selectedMode]);
     }
     
@@ -98,7 +98,7 @@ void DisplayManager::renderPlaying(int selectedMode, int frequency) {
     
     display.drawRect(30, 14, 90, 14, SSD1306_WHITE);
     
-    int maxFreq = (selectedMode == Menu::NOISE) ? 5000 : 2000;
+    int maxFreq = (selectedMode == Menu::NOISE) ? 5000 : 20000;
     int barW = map(frequency, 350, maxFreq, 0, 86);
     if (barW < 0) barW = 0;
     if (barW > 86) barW = 86;
@@ -120,6 +120,13 @@ void DisplayManager::drawWaveIcon(int mode, int x, int y) {
     uint16_t color = SSD1306_WHITE;
     
     switch(mode) {
+        case Menu::SINE:    
+            for(int i=0; i<19; i++) {
+                int y1 = y + 6 + (int)(5.0 * sin((i / 19.0) * 6.28));
+                int y2 = y + 6 + (int)(5.0 * sin(((i+1) / 19.0) * 6.28));
+                display.drawLine(x+i, y1, x+i+1, y2, color);
+            }
+            break;
         case Menu::SQUARE:   
             display.drawLine(x, y+10, x+5, y+10, color); 
             display.drawLine(x+5, y+10, x+5, y+2, color);
