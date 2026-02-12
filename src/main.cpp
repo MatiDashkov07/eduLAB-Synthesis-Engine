@@ -5,7 +5,11 @@
 #include "Button.h"
 #include "RotaryEncoder.h"
 #include "Potentiometer.h"
-#include "../include/Utils.h"
+#include "Utils.h"
+
+// FreeRTOS headers for task management (built into ESP32)
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 // ==========================================
 // HARDWARE CONFIGURATION
@@ -32,11 +36,53 @@ Potentiometer potPitch(POT_PIN_PITCH);
 Potentiometer potTone(POT_PIN_TONE);
 
 // ==========================================
+// DUAL-CORE ARCHITECTURE
+// ==========================================
+
+// Task handle for audio task
+TaskHandle_t audioTaskHandle;
+
+/**
+ * Audio Task - Runs on Core 0 (dedicated)
+ * 
+ * This task runs continuously and ONLY handles audio generation.
+ * It has HIGH priority to ensure glitch-free audio output.
+ * 
+ * Core 0 is typically less loaded (WiFi/BT disabled in this project),
+ * making it perfect for real-time audio.
+ * 
+ * @param parameter - Unused (required by FreeRTOS signature)
+ */
+void audioTask(void* parameter) {
+    Serial.println("[Audio Task] Started on Core 0");
+    
+    // Infinite loop - like loop() but dedicated to audio
+    while (true) {
+        // This is where the magic happens:
+        // - Reads shared variables (frequency, amplitude)
+        // - Generates audio samples
+        // - Sends buffer to I2S DAC
+        // 
+        // The i2s_write() inside update() is BLOCKING,
+        // which naturally rate-limits this task to ~5.8ms intervals
+        // (the time it takes to play 256 samples @ 44.1kHz)
+        
+        audioEngine.update(stateMachine, potPitch, potTone);
+        
+        // Note: No vTaskDelay() needed here because i2s_write() blocks.
+        // The DMA dictates our timing, which is exactly what we want!
+    }
+}
+
+// ==========================================
 // SETUP
 // ==========================================
 void setup() {
     Serial.begin(115200);
     delay(500);
+    
+    Serial.println("eduLAB v4.0 - Dual-Core Architecture");
+    Serial.println("=====================================");
     
     // Initialize hardware
     button.begin();
@@ -45,28 +91,37 @@ void setup() {
     potTone.begin();
     
     displayManager.begin();  // I2C + OLED + Splash screen
-    audioEngine.begin();    // I2S + Audio setup
+    audioEngine.begin();     // I2S + Audio setup
     
-    Serial.println("eduLAB v3.8 - OOP Refactored");
+    // Create audio task on Core 0
+    xTaskCreatePinnedToCore(
+        audioTask,           // Task function
+        "AudioEngineTask",   // Name (for debugging)
+        10000,               // Stack size in bytes (10KB is plenty)
+        NULL,                // Task parameters (none)
+        2,                   // Priority (2 = high, higher than default loop)
+        &audioTaskHandle,    // Task handle (for future control if needed)
+        0                    // Core ID: 0 (dedicated audio core)
+    );
+    
+    Serial.println("[Setup] Core 0: Audio Task (High Priority)");
+    Serial.println("[Setup] Core 1: UI/Display Loop (Normal Priority)");
+    Serial.println("=====================================");
 }
 
 // ==========================================
-// MAIN LOOP
+// MAIN LOOP - Runs on Core 1
 // ==========================================
 void loop() {
+    // ==========================================
+    // This loop now ONLY handles UI and controls
+    // Audio runs independently on Core 0
+    // ==========================================
+    
     // 1. UPDATE INPUTS
     button.update();
-    //encoder.update();      // Not needed with interrupt-based encoder
     potPitch.update();
     potTone.update();
-    
-    // 5. CALCULATE FREQUENCY FOR DISPLAY
-    int selectedMode = stateMachine.getMenu().getSelectedMode();
-    int maxFreq = (selectedMode == Menu::NOISE) ? 5000 : 20000;
-    int currentFrequency = mapLogarithmicAsymmetric(potPitch.getValue(), 20, maxFreq);
-    
-    //debug: print potentiometer values
-    Serial.printf("Raw adc %d, Frequancy: %d Hz \n", potPitch.getValue(), currentFrequency);
     
     // 2. HANDLE BUTTON EVENTS
     if (button.wasLongPressed()) {
@@ -88,7 +143,21 @@ void loop() {
     // 4. UPDATE STATE MACHINE (timeout check)
     stateMachine.update();
     
-    // 6. UPDATE OUTPUTS
-    displayManager.update(stateMachine, currentFrequency);
-    audioEngine.update(stateMachine, potPitch, potTone);
+    // 5. CALCULATE FREQUENCY FOR DISPLAY
+    int selectedMode = stateMachine.getMenu().getSelectedMode();
+    int maxFreq = (selectedMode == Menu::NOISE) ? 5000 : 20000;
+    float currentFrequency = mapLogarithmicAsymmetric(potPitch.getValue(), 20.0f, maxFreq);
+    
+    // 6. UPDATE DISPLAY
+    // This can now run without affecting audio!
+    // The I2C communication (which blocks for ~10ms) happens on Core 1,
+    // while Core 0 continues generating audio smoothly.
+    displayManager.update(stateMachine, (int)currentFrequency);
+    
+    // 7. AUDIO UPDATE - REMOVED!
+    // audioEngine.update() has been moved to Core 0 (audioTask)
+    // This separation is what eliminates the clicks/pops!
+    
+    // Small delay to yield CPU to other tasks (good practice)
+    delay(10);
 }

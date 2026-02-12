@@ -11,7 +11,7 @@ class AudioEngine {
 private:
     // I2S Configuration
     static const int SAMPLE_RATE = 44100;
-    static const int BUFFER_SIZE = 256;
+    static const int BUFFER_SIZE = 512;
      int I2S_BCK_PIN;
     int I2S_LRCK_PIN;
     int I2S_DIN_PIN;
