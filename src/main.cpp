@@ -5,7 +5,7 @@
 #include "Button.h"
 #include "RotaryEncoder.h"
 #include "Potentiometer.h"
-#include "Utils.h"
+#include "../include/Utils.h"
 
 // FreeRTOS headers for task management (built into ESP32)
 #include "freertos/FreeRTOS.h"
@@ -130,9 +130,17 @@ void loop() {
     }
     
     if (button.wasShortPressed()) {
-        stateMachine.onButtonShortPress();
-        audioEngine.playFeedbackTone(2000, 50);
+    stateMachine.onButtonShortPress();
+    
+    // Mute/Unmute gets a distinctive "double beep"
+    if (stateMachine.getState() == StateMachine::MUTE) {
+        // Entering mute: LOW tone, longer
+        audioEngine.playFeedbackTone(300, 150);  // 150ms, low pitch
+    } else {
+        // Exiting mute: HIGH tone, longer  
+        audioEngine.playFeedbackTone(1500, 150);  // 150ms, high pitch
     }
+}
     
     // 3. HANDLE ENCODER MOVEMENT
     int direction = encoder.getDirection();

@@ -50,29 +50,49 @@ void AudioEngine::begin() {
     Serial.println("I2S Initialized!");
 }
 
-void AudioEngine::update(const StateMachine &stateMachine, const Potentiometer &potPitch, const Potentiometer &potTone) {
-    StateMachine::State currentState = stateMachine.getState();
-    size_t bytes_written;
+// AudioEngine.cpp - update() method
+// FINAL VERSION - No crashes, audio continues in MENU when waveform exists
 
+void AudioEngine::update(const StateMachine &stateMachine, const Potentiometer &potPitch, const Potentiometer &potTone) {
+    size_t bytes_written;
+    StateMachine::State currentState = stateMachine.getState();
+
+    // ========================================
+    // PRIORITY 1: Feedback Tones
+    // ========================================
+    if (audioState == FEEDBACK_TONE) {
+        fillFeedbackBuffer();
+        i2s_write(I2S_NUM_0, audioBuffer, sizeof(audioBuffer), &bytes_written, portMAX_DELAY);
+        return;
+    }
+
+    // ========================================
+    // PRIORITY 2: Mute State
+    // ========================================
     if (currentState == StateMachine::MUTE) {
         memset(audioBuffer, 0, sizeof(audioBuffer));
         i2s_write(I2S_NUM_0, audioBuffer, sizeof(audioBuffer), &bytes_written, portMAX_DELAY);
         return;
     }
 
-    const Menu &menu = stateMachine.getMenu();
-    int selectedMode = menu.getSelectedMode();
-    if (selectedMode == -1) {
+    // ========================================
+    // PRIORITY 3: Normal Playback
+    // Works in both MENU and PLAYING states
+    // ========================================
+    int selectedMode = stateMachine.getMenu().getSelectedMode();
+    currentWaveform = waveforms[selectedMode];
+
+    // If no waveform selected yet → silence
+    if (!currentWaveform) {
         memset(audioBuffer, 0, sizeof(audioBuffer));
         i2s_write(I2S_NUM_0, audioBuffer, sizeof(audioBuffer), &bytes_written, portMAX_DELAY);
         return;
     }
-    if (selectedMode >= 0 && selectedMode < 5) {
-        currentWaveform = waveforms[selectedMode];
-    }
-    setFrequency(mapLogarithmicAsymmetric(potPitch.getValue(), 20, 20000));
-    //setAmplitude(potTone.getValue() / 4095.0);
-    setMasterVolume(mapLogarithmicAsymmetric(potTone.getValue(), 0.01, 0.2));
+
+    // Waveform exists → play it!
+    int maxFreq = (selectedMode == Menu::NOISE) ? 5000 : 20000;
+    setFrequency(mapLogarithmicAsymmetric(potPitch.getValue(), 20.0f, maxFreq));
+
     fillBuffer();
     i2s_write(I2S_NUM_0, audioBuffer, sizeof(audioBuffer), &bytes_written, portMAX_DELAY);
 }

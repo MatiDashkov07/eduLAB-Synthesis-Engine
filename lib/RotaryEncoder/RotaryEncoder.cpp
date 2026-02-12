@@ -1,69 +1,102 @@
 #include "RotaryEncoder.h"
-#include <Arduino.h>
 
-// Initialize static instance pointer
-RotaryEncoder* RotaryEncoder::instance = nullptr;
+// Static instance for ISR
+static RotaryEncoder* instancePointer = nullptr;
 
-RotaryEncoder::RotaryEncoder(int clkPin, int dtPin)
-    : pinCLK(clkPin), pinDT(dtPin), position(0), lastReadPosition(0), lastInterruptTime(0) {
+// State transition table
+// Indexed by: (prevState << 2) | currentState
+// Returns: -1 (CCW), 0 (invalid), +1 (CW)
+const int8_t RotaryEncoder::stateTable[16] = {
+     0,  // 0000: no change
+    -1,  // 0001: CCW step
+    +1,  // 0010: CW step
+     0,  // 0011: invalid
+    +1,  // 0100: CW step
+     0,  // 0101: no change
+     0,  // 0110: invalid
+    -1,  // 0111: CCW step
+    -1,  // 1000: CCW step
+     0,  // 1001: invalid
+     0,  // 1010: no change
+    +1,  // 1011: CW step
+     0,  // 1100: invalid
+    +1,  // 1101: CW step
+    -1,  // 1110: CCW step
+     0   // 1111: no change
+};
+
+RotaryEncoder::RotaryEncoder(int clk, int dt)
+    : pinCLK(clk), pinDT(dt), encoderState(0), position(0), lastInterruptTime(0) {
+    instancePointer = this;
 }
 
 void RotaryEncoder::begin() {
-    pinMode(pinCLK, INPUT);
-    pinMode(pinDT, INPUT);
-    instance = this; // Set the static instance pointer
-    attachInterrupt(digitalPinToInterrupt(pinDT), RotaryEncoder::staticWrapper, FALLING);
+    pinMode(pinCLK, INPUT_PULLUP);
+    pinMode(pinDT, INPUT_PULLUP);
+    
+    // Read initial state
+    int clk = digitalRead(pinCLK);
+    int dt = digitalRead(pinDT);
+    encoderState = (clk << 1) | dt;
+    
+    // Attach interrupts to BOTH pins
+    attachInterrupt(digitalPinToInterrupt(pinCLK), handleInterruptStatic, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(pinDT), handleInterruptStatic, CHANGE);
+    
+    Serial.println("[ENC] Initialized with state machine decoder");
 }
 
-void RotaryEncoder::staticWrapper() {
-    if (instance) {
-        instance->updatePosition();
+void IRAM_ATTR RotaryEncoder::handleInterruptStatic() {
+    if (instancePointer) {
+        instancePointer->updatePosition();
     }
 }
 
 void RotaryEncoder::updatePosition() {
     unsigned long currentTime = millis();
     
-    // Debounce check
-    if (currentTime - lastInterruptTime < 5) {
-        Serial.println("[ENC] Debounced (too fast)");  // ← Debug
-        return;
+    // Aggressive debouncing
+    if (currentTime - lastInterruptTime < DEBOUNCE_DELAY) {
+        return;  // Too fast, ignore
     }
     lastInterruptTime = currentTime;
-
-    // Read both pins
-    int clkState = digitalRead(pinCLK);
-    int dtState = digitalRead(pinDT);
     
-    // Determine direction
-    if (clkState != dtState) {
-        position++;
-        Serial.println("[ENC] CW +1");  // ← Debug
-    } else {
-        position--;
-        Serial.println("[ENC] CCW -1");  // ← Debug
+    // Read current state
+    int clk = digitalRead(pinCLK);
+    int dt = digitalRead(pinDT);
+    int currentState = (clk << 1) | dt;
+    
+    // Look up state transition
+    int index = (encoderState << 2) | currentState;
+    int8_t direction = stateTable[index];
+    
+    if (direction != 0) {
+        position += direction;
+        Serial.printf("[ENC] %s (state: %d -> %d)\n", 
+                     (direction > 0) ? "CW" : "CCW",
+                     encoderState, currentState);
     }
-}
-
-void RotaryEncoder::resetPosition() {
-    position = 0;
-    lastReadPosition = 0;
-}
-
-int RotaryEncoder::getPosition() {
-    noInterrupts();
-    int pos = position;
-    interrupts();
-    return pos;
+    
+    // Update state for next transition
+    encoderState = currentState;
 }
 
 int RotaryEncoder::getDirection() {
-    noInterrupts();
-    int currentPos = position;
-    interrupts();
-    int direction = currentPos - lastReadPosition;
-    lastReadPosition = currentPos;
-    if (direction > 0) return 1;
-    if (direction < 0) return -1;
-    return 0;
+    int currentPosition = position;
+    
+    if (currentPosition == 0) {
+        return 0;  // No movement
+    }
+    
+    // Reset position for next read
+    position = 0;
+    
+    // Convert state transitions to detents
+    // 4 state transitions = 1 physical detent (one "click")
+    // This handles fast rotations correctly:
+    //   8 transitions = 2 detents (skip one menu item)
+    //   12 transitions = 3 detents (skip two menu items)
+    int detents = currentPosition % 4;
+    
+    return detents;  // Can be negative (CCW) or positive (CW)
 }
