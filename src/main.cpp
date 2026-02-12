@@ -5,6 +5,7 @@
 #include "Button.h"
 #include "RotaryEncoder.h"
 #include "Potentiometer.h"
+#include "../include/Utils.h"
 
 // ==========================================
 // HARDWARE CONFIGURATION
@@ -59,6 +60,14 @@ void loop() {
     potPitch.update();
     potTone.update();
     
+    // 5. CALCULATE FREQUENCY FOR DISPLAY
+    int selectedMode = stateMachine.getMenu().getSelectedMode();
+    int maxFreq = (selectedMode == Menu::NOISE) ? 5000 : 20000;
+    int currentFrequency = mapLogarithmicAsymmetric(potPitch.getValue(), 20, maxFreq);
+    
+    //debug: print potentiometer values
+    Serial.printf("Raw adc %d, Frequancy: %d Hz \n", potPitch.getValue(), currentFrequency);
+    
     // 2. HANDLE BUTTON EVENTS
     if (button.wasLongPressed()) {
         stateMachine.onButtonLongPress();
@@ -78,11 +87,6 @@ void loop() {
     
     // 4. UPDATE STATE MACHINE (timeout check)
     stateMachine.update();
-    
-    // 5. CALCULATE FREQUENCY FOR DISPLAY
-    int selectedMode = stateMachine.getMenu().getSelectedMode();
-    int maxFreq = (selectedMode == Menu::NOISE) ? 5000 : 20000;
-    int currentFrequency = map(potPitch.getValue(), 0, 4095, 20, maxFreq);
     
     // 6. UPDATE OUTPUTS
     displayManager.update(stateMachine, currentFrequency);

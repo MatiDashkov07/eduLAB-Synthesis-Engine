@@ -4,10 +4,11 @@
 #include <Arduino.h>
 #include "driver/i2s.h"
 #include "Waveforms/Waveforms.h"
+#include "../../include/Utils.h"
 
 
 AudioEngine::AudioEngine(int bck, int lrck, int din)
-    : currentWaveform(nullptr), phase(0), frequency(440), amplitude(1.0), masterVolume(0.5),
+    : currentWaveform(nullptr), phase(0), frequency(440), amplitude(1.0), masterVolume(0.05),
       audioState(NORMAL_PLAYBACK), feedbackSamplesRemaining(0), feedbackFrequency(0),
       I2S_BCK_PIN(bck), I2S_LRCK_PIN(lrck), I2S_DIN_PIN(din) {
 }
@@ -54,8 +55,7 @@ void AudioEngine::update(const StateMachine &stateMachine, const Potentiometer &
     size_t bytes_written;
 
     if (currentState == StateMachine::MUTE) {
-        setMasterVolume(0);
-        fillBuffer();
+        memset(audioBuffer, 0, sizeof(audioBuffer));
         i2s_write(I2S_NUM_0, audioBuffer, sizeof(audioBuffer), &bytes_written, portMAX_DELAY);
         return;
     }
@@ -63,16 +63,16 @@ void AudioEngine::update(const StateMachine &stateMachine, const Potentiometer &
     const Menu &menu = stateMachine.getMenu();
     int selectedMode = menu.getSelectedMode();
     if (selectedMode == -1) {
-        setMasterVolume(0);
-        fillBuffer();
+        memset(audioBuffer, 0, sizeof(audioBuffer));
         i2s_write(I2S_NUM_0, audioBuffer, sizeof(audioBuffer), &bytes_written, portMAX_DELAY);
         return;
     }
     if (selectedMode >= 0 && selectedMode < 5) {
         currentWaveform = waveforms[selectedMode];
     }
-    setFrequency(map(potPitch.getValue(), 0, 4095, 20, 20000));
+    setFrequency(mapLogarithmicAsymmetric(potPitch.getValue(), 20, 20000));
     //setAmplitude(potTone.getValue() / 4095.0);
+    setMasterVolume(mapLogarithmicAsymmetric(potTone.getValue(), 0.01, 0.2));
     fillBuffer();
     i2s_write(I2S_NUM_0, audioBuffer, sizeof(audioBuffer), &bytes_written, portMAX_DELAY);
 }
