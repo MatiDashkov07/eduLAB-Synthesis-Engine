@@ -82,21 +82,20 @@ void RotaryEncoder::updatePosition() {
 }
 
 int RotaryEncoder::getDirection() {
+    noInterrupts();
+    
     int currentPosition = position;
     
-    if (currentPosition == 0) {
-        return 0;  // No movement
+    if (abs(currentPosition) >= 4) {
+        int detents = currentPosition / 4;
+        
+        position = currentPosition % 4;
+        
+        interrupts();
+        
+        return detents;
     }
     
-    // Reset position for next read
-    position = 0;
-    
-    // Convert state transitions to detents
-    // 4 state transitions = 1 physical detent (one "click")
-    // This handles fast rotations correctly:
-    //   8 transitions = 2 detents (skip one menu item)
-    //   12 transitions = 3 detents (skip two menu items)
-    int detents = currentPosition % 4;
-    
-    return detents;  // Can be negative (CCW) or positive (CW)
+    interrupts();
+    return 0;
 }
