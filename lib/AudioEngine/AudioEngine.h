@@ -12,7 +12,7 @@ private:
     // I2S Configuration
     static const int SAMPLE_RATE = 44100;
     static const int BUFFER_SIZE = 512;
-     int I2S_BCK_PIN;
+    int I2S_BCK_PIN;
     int I2S_LRCK_PIN;
     int I2S_DIN_PIN;
 
@@ -34,9 +34,9 @@ private:
         NORMAL_PLAYBACK,
         FEEDBACK_TONE
     };
-    AudioState audioState;          
-    int feedbackSamplesRemaining;   
-    float feedbackFrequency;        
+    volatile AudioState audioState;          
+    volatile int feedbackSamplesRemaining;   
+    volatile float feedbackFrequency;        
 
 public:
     AudioEngine(int bck, int lrck, int din);  // ← Constructor

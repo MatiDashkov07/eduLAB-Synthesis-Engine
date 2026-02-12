@@ -142,7 +142,13 @@ void AudioEngine::fillFeedbackBuffer() {
             continue;
         }
 
-        float sample = sin(feedbackPhase) * 0.3;
+        // OLD: fixed 0.3 amplitude
+        // float sample = sin(feedbackPhase) * 0.3;
+        
+        // NEW: respect masterVolume, but cap at safe level
+        float feedbackAmplitude = min(masterVolume * 0.5f, 0.15f);  // Max 15% even if volume is high
+        float sample = sin(feedbackPhase) * feedbackAmplitude;
+        
         int16_t sampleValue = (int16_t)(sample * 32767);
 
         audioBuffer[i * 2] = sampleValue;

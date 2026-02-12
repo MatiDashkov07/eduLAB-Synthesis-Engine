@@ -23,15 +23,25 @@ void RotaryEncoder::staticWrapper() {
 
 void RotaryEncoder::updatePosition() {
     unsigned long currentTime = millis();
+    
+    // Debounce check
     if (currentTime - lastInterruptTime < 5) {
-        return; // Debounce: ignore interrupts within 5ms
+        Serial.println("[ENC] Debounced (too fast)");  // ← Debug
+        return;
     }
     lastInterruptTime = currentTime;
 
-    if (digitalRead(pinCLK) != digitalRead(pinDT)) {
+    // Read both pins
+    int clkState = digitalRead(pinCLK);
+    int dtState = digitalRead(pinDT);
+    
+    // Determine direction
+    if (clkState != dtState) {
         position++;
+        Serial.println("[ENC] CW +1");  // ← Debug
     } else {
         position--;
+        Serial.println("[ENC] CCW -1");  // ← Debug
     }
 }
 
