@@ -6,6 +6,8 @@
 #include "driver/i2s.h"
 #include "Waveforms/Waveforms.h"
 #include "../../include/Utils.h"
+#include "../../include/Consts.h"
+
 
 
 AudioEngine::AudioEngine(int bck, int lrck, int din)

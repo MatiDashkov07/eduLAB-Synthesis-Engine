@@ -1,6 +1,6 @@
 #include "Voice.h"
 #include "Waveforms/Waveforms.h"
-#include "../include/Consts.h"
+#include "../../include/Consts.h"
 #include <Arduino.h>
 
 Voice::Voice(WaveformGenerator* wf, float freq, float amp) 

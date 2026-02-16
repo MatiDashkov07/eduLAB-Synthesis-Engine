@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include "Waveforms/WaveformGenerator.h"
 #include "Voice.h"
-#include "../include/Consts.h"
+#include "../../include/Consts.h"
 
 class StateMachine;  // Forward declaration
 class Potentiometer; // Forward declaration

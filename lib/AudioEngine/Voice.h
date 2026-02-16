@@ -2,7 +2,7 @@
 #define VOICE_H
 
 #include "Waveforms/WaveformGenerator.h"
-#include "../include/Consts.h"
+#include "../../include/Consts.h"
 
 class Voice {
 private:
@@ -14,19 +14,18 @@ private:
     bool isActive;
 
 public:
-    Voice(WaveformGenerator* wf = nullptr, float freq = 0.0f, float amp = 0.0f) 
-        : waveform(wf), frequency(freq), amplitude(amp), phase(0), isActive(false) {}
+    Voice(WaveformGenerator* wf = nullptr, float freq = 0.0f, float amp = 0.0f);
     
-    float getNextSample() {}
-    void noteOn(float freq, float amp) {}
-    void noteOff() {}
-    void setWaveform(WaveformGenerator* wf) {}
-    void setFrequency(float freq) {}
-    void setAmplitude(float amp) {}
+    float getNextSample();
+    void noteOn(float freq, float amp);
+    void noteOff();
+    void setWaveform(WaveformGenerator* wf);
+    void setFrequency(float freq);
+    void setAmplitude(float amp);
     bool getIsActive() const { return isActive; }
 
 
 private:
-    void updatePhaseIncrement() {}
+    void updatePhaseIncrement();
 };
 #endif
