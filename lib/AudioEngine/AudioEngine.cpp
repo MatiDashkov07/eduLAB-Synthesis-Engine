@@ -1,6 +1,7 @@
 #include "AudioEngine.h"
 #include "StateMachine.h"
 #include "Potentiometer.h"
+#include "Voice.h"
 #include <Arduino.h>
 #include "driver/i2s.h"
 #include "Waveforms/Waveforms.h"
@@ -8,8 +9,7 @@
 
 
 AudioEngine::AudioEngine(int bck, int lrck, int din)
-    : currentWaveform(nullptr), phase(0), frequency(440), amplitude(1.0), masterVolume(0.05),
-      audioState(NORMAL_PLAYBACK), feedbackSamplesRemaining(0), feedbackFrequency(0),
+    : audioState(NORMAL_PLAYBACK), feedbackSamplesRemaining(0), feedbackFrequency(0),
       I2S_BCK_PIN(bck), I2S_LRCK_PIN(lrck), I2S_DIN_PIN(din) {
 }
 
@@ -45,7 +45,15 @@ void AudioEngine::begin() {
     waveforms[3] = new SawWave();
     waveforms[4] = new NoiseWave();
 
-    currentWaveform = waveforms[0];
+    for (int i = 0; i < 4; i++) {
+        voices[i] = Voice(waveforms[0], 0.0f, 0.0f);
+    }
+
+    //test to see if polyphony works
+    float freq = 440.0f; // A4
+    noteOn(0, freq, 0.5f); 
+    noteOn(1, 1.25 * freq, 0.5f); 
+    noteOn(2, 1.5 * freq, 0.5f); 
 
     Serial.println("I2S Initialized!");
 }
@@ -75,7 +83,11 @@ void AudioEngine::update(const StateMachine &stateMachine, const Potentiometer &
     }
 
     if (selectedMode >= 0 && selectedMode < 5) {
-        currentWaveform = waveforms[selectedMode];
+        //setWaveform(selectedMode, waveforms[selectedMode]);
+        //test to see if polyphony works with different frequencies
+        setWaveform(0, waveforms[selectedMode]);
+        setWaveform(1, waveforms[selectedMode]);
+        setWaveform(2, waveforms[selectedMode]);
     } else {
         memset(audioBuffer, 0, sizeof(audioBuffer));
         i2s_write(I2S_NUM_0, audioBuffer, sizeof(audioBuffer), &bytes_written, portMAX_DELAY);
@@ -84,7 +96,13 @@ void AudioEngine::update(const StateMachine &stateMachine, const Potentiometer &
 
     int maxFreq = (selectedMode == 4) ? 5000 : 20000; // 4 is NOISE
     
-    setFrequency(mapLogarithmicAsymmetric(potPitch.getValue(), 20.0f, maxFreq));
+    
+    //test to see if polyphony works with different frequencies
+    float baseFreq = mapLogarithmicAsymmetric(potPitch.getValue(), 20.0f, maxFreq);
+    setFrequency(0, baseFreq);
+    setFrequency(1, 1.25 * baseFreq);
+    setFrequency(2, 1.5 * baseFreq);
+    
 
     float vol = potTone.getValue() / 4095.0f;
     setMasterVolume(vol * 0.1f); 
@@ -93,17 +111,24 @@ void AudioEngine::update(const StateMachine &stateMachine, const Potentiometer &
     i2s_write(I2S_NUM_0, audioBuffer, sizeof(audioBuffer), &bytes_written, portMAX_DELAY);
 }
 
-void AudioEngine::setWaveform(WaveformGenerator* waveform) {
-    currentWaveform = waveform;
+void AudioEngine::setWaveform(int voiceIndex, WaveformGenerator* waveform) {
+    voices[voiceIndex].setWaveform(waveform);
 }
 
-void AudioEngine::setFrequency(float freq) {
-    frequency = freq;
-    updatePhaseIncrement();
+void AudioEngine::setFrequency(int voiceIndex, float freq) {
+    voices[voiceIndex].setFrequency(freq);
 }
 
-void AudioEngine::setAmplitude(float amp) {
-    amplitude = amp;
+void AudioEngine::setAmplitude(int voiceIndex, float amp) {
+    voices[voiceIndex].setAmplitude(amp);
+}
+
+void AudioEngine::noteOn(int voiceIndex, float freq, float amp) {
+    voices[voiceIndex].noteOn(freq, amp);
+}
+
+void AudioEngine::noteOff(int voiceIndex) {
+    voices[voiceIndex].noteOff();
 }
 
 void AudioEngine::setMasterVolume(float vol) {
@@ -111,7 +136,26 @@ void AudioEngine::setMasterVolume(float vol) {
 }
 
 void AudioEngine::fillBuffer() {
-    if (!currentWaveform) {
+    bool anyActive = false;
+    for (int i=0; i < BUFFER_SIZE / 2; i++) {
+        float mixedSample = 0.0f;
+        for(Voice &voice : voices) {
+            if (voice.getIsActive()) {
+                anyActive = true;
+                float sample = voice.getNextSample();
+                mixedSample += sample;
+            }
+        }
+        mixedSample *= masterVolume;
+        mixedSample /= sizeof(voices) / sizeof(Voice);
+
+        int16_t sampleValue = (int16_t)(mixedSample * 32767);
+
+        audioBuffer[i * 2] = sampleValue;      
+        audioBuffer[i * 2 + 1] = sampleValue;
+    }
+
+    if (!anyActive) {
         memset(audioBuffer, 0, sizeof(audioBuffer));
         return;
     }
@@ -120,30 +164,15 @@ void AudioEngine::fillBuffer() {
         fillFeedbackBuffer();  
         return;
     }
-
-    for (int i = 0; i < BUFFER_SIZE / 2; i++) {  
-        float sample = currentWaveform->getSample(phase) * amplitude * masterVolume;
-        int16_t sampleValue = (int16_t)(sample * 32767);
-        
-        audioBuffer[i * 2] = sampleValue;      
-        audioBuffer[i * 2 + 1] = sampleValue;  
-        
-        phase += phaseIncrement;
-        if (phase >= 2*PI) {
-            phase -= 2*PI;
-        }
-    }
-}
-
-void AudioEngine::updatePhaseIncrement() {
-    phaseIncrement = TWO_PI * frequency / SAMPLE_RATE;
 }
 
 void AudioEngine::playFeedbackTone(float frequency, int durationMs) {
     audioState = FEEDBACK_TONE;
     feedbackFrequency = frequency;
     feedbackSamplesRemaining = (durationMs / 1000.0) * SAMPLE_RATE;
-    setFrequency(frequency);
+    for (int i = 0; i < sizeof(voices) / sizeof(Voice); i++) {
+        setFrequency(i, frequency);
+    }
 }
 
 void AudioEngine::fillFeedbackBuffer() {
