@@ -63,6 +63,8 @@ void AudioEngine::begin() {
 void AudioEngine::update(const StateMachine &stateMachine, const Potentiometer &potPitch, const Potentiometer &potTone) {
     size_t bytes_written;
     StateMachine::State currentState = stateMachine.getState();
+    float vol = potTone.getValue() / 4095.0f;
+    setMasterVolume(vol * 0.5f); 
 
     if (audioState == FEEDBACK_TONE) {
         fillFeedbackBuffer();
@@ -106,8 +108,7 @@ void AudioEngine::update(const StateMachine &stateMachine, const Potentiometer &
     setFrequency(2, 1.5 * baseFreq);
     
 
-    float vol = potTone.getValue() / 4095.0f;
-    setMasterVolume(vol * 0.5f); 
+    
 
     fillBuffer();
     i2s_write(I2S_NUM_0, audioBuffer, sizeof(audioBuffer), &bytes_written, portMAX_DELAY);
