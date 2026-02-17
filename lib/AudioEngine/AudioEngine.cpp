@@ -53,9 +53,9 @@ void AudioEngine::begin() {
 
     //test to see if polyphony works
     float freq = 440.0f; // A4
-    noteOn(0, freq, 0.5f); 
-    noteOn(1, 1.25 * freq, 0.5f); 
-    noteOn(2, 1.5 * freq, 0.5f); 
+    noteOn(0, freq, 1.0f); 
+    noteOn(1, 1.25 * freq, 1.0f); 
+    noteOn(2, 1.5 * freq, 1.0f); 
 
     Serial.println("I2S Initialized!");
 }
@@ -107,7 +107,7 @@ void AudioEngine::update(const StateMachine &stateMachine, const Potentiometer &
     
 
     float vol = potTone.getValue() / 4095.0f;
-    setMasterVolume(vol * 0.1f); 
+    setMasterVolume(vol * 0.5f); 
 
     fillBuffer();
     i2s_write(I2S_NUM_0, audioBuffer, sizeof(audioBuffer), &bytes_written, portMAX_DELAY);
@@ -157,13 +157,13 @@ void AudioEngine::fillBuffer() {
         audioBuffer[i * 2 + 1] = sampleValue;
     }
 
-    if (!anyActive) {
-        memset(audioBuffer, 0, sizeof(audioBuffer));
-        return;
-    }
-
     if (audioState == FEEDBACK_TONE) {
         fillFeedbackBuffer();  
+        return;
+    }
+    
+    if (!anyActive) {
+        memset(audioBuffer, 0, sizeof(audioBuffer));
         return;
     }
 }
