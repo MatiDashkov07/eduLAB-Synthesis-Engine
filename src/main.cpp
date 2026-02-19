@@ -1,4 +1,20 @@
 #include <Arduino.h>
+#ifdef TEENSY_BUILD
+
+void setup() {
+  pinMode(LED_BUILTIN, OUTPUT); // Pin 13
+}
+
+void loop() {
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(500); // On for 500ms
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(500); // Off for 500ms
+}
+
+#else
+
+
 #include "StateMachine.h"
 #include "DisplayManager.h"
 #include "AudioEngine.h"
@@ -169,3 +185,5 @@ void loop() {
     // Small delay to yield CPU to other tasks (good practice)
     delay(10);
 }
+
+#endif
