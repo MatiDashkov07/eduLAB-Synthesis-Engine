@@ -1,3 +1,5 @@
+#ifndef TEENSY_BUILD
+
 #include "AudioEngine.h"
 #include "StateMachine.h"
 #include "Potentiometer.h"
@@ -210,3 +212,5 @@ void AudioEngine::fillFeedbackBuffer() {
         feedbackSamplesRemaining--;
     }
 }
+
+#endif

@@ -6,10 +6,12 @@ void setup() {
 }
 
 void loop() {
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(500); // On for 500ms
-  digitalWrite(LED_BUILTIN, LOW);
-  delay(500); // Off for 500ms
+  for (int i = 0; i < 20; i++) {
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(10 * i);
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(10 * i);
+  }
 }
 
 #else
