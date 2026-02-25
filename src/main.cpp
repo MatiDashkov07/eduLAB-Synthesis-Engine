@@ -1,18 +1,22 @@
 #include <Arduino.h>
 #ifdef TEENSY_BUILD
 
+#include "AudioEngine.h"
+
+const int I2S_BCK_PIN = 22;
+const int I2S_LRCK_PIN = 20;
+const int I2S_DIN_PIN = 21;
+
+AudioEngine audioEngine(I2S_BCK_PIN, I2S_LRCK_PIN, I2S_DIN_PIN);
+
 void setup() {
-  pinMode(LED_BUILTIN, OUTPUT); // Pin 13
+    Serial.begin(115200);
+
+    audioEngine.begin();
+    audioEngine.noteOn(0, 440.0f, 1.0f);
 }
 
-void loop() {
-  for (int i = 0; i < 20; i++) {
-    digitalWrite(LED_BUILTIN, HIGH);
-    delay(10 * i);
-    digitalWrite(LED_BUILTIN, LOW);
-    delay(10 * i);
-  }
-}
+void loop() {}
 
 #else
 

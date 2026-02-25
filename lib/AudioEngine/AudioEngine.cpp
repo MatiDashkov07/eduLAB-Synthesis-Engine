@@ -1,4 +1,4 @@
-#ifndef TEENSY_BUILD
+#ifdef ESP32_BUILD
 
 #include "AudioEngine.h"
 #include "StateMachine.h"

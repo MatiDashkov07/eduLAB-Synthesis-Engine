@@ -57,9 +57,14 @@ public:
     void playFeedbackTone(float frequency, int durationMs);
 
 private:
-    void fillBuffer();             
+     void fillBuffer();             
     //void updatePhaseIncrement();  
     void fillFeedbackBuffer(); 
+
+    #ifdef TEENSY_BUILD
+    static AudioEngine* _instance;
+    static void dmaISR();  
+    #endif
 };
 
 #endif
