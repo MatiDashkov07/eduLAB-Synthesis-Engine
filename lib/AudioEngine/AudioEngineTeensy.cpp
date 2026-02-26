@@ -1,6 +1,9 @@
 #ifdef TEENSY_BUILD
 
 #include "AudioEngine.h"
+#include "Voice.h"
+#include "Waveforms/Waveforms.h"
+#include <Arduino.h>
 #include <imxrt.h>
 #include <arm_math.h>
 #include <DMAChannel.h>
@@ -25,6 +28,7 @@ AudioEngine::AudioEngine(int bck, int lrck, int din)
 
 void AudioEngine::dmaISR() {
     dma.clearInterrupt();
+	if (!_instance) return;
     if (dma_playing_A) {
         _fillTarget = buffer_A;  
         dma.sourceBuffer(buffer_B, sizeof(buffer_B));
@@ -63,9 +67,22 @@ void set_audioClock(int nfact, int32_t nmult, uint32_t ndiv, bool force = false)
 
 void AudioEngine::begin() {
 	_instance = this; // Set the static instance pointer for ISR access
+	Serial.println("Step 1: CCM clock");
 	
     //Step 1: Enable SAI1 clock
     CCM_CCGR5 |= CCM_CCGR5_SAI1(CCM_CCGR_ON);
+
+	
+	waveforms[0] = new SineWave();
+    waveforms[1] = new TriangleWave();
+    waveforms[2] = new SquareWave();
+    waveforms[3] = new SawWave();
+    waveforms[4] = new NoiseWave();
+
+	//Voice initialization for Teensy (mono)
+	voices[0].setWaveform(waveforms[0]);
+	voices[0].setAmplitude(0.0f);
+	voices[0].setFrequency(440.0f);
 
 
 
@@ -73,7 +90,7 @@ void AudioEngine::begin() {
 
 
 
-
+	Serial.println("Step 3: PLL");
     // Step 3: PLL configuration
     int fs = AUDIO_SAMPLE_RATE_EXACT;
 	// PLL between 27*24 = 648MHz und 54*24=1296MHz
@@ -85,6 +102,9 @@ void AudioEngine::begin() {
 	int c2 = 10000;
 	int c1 = C * c2 - (c0 * c2);
 	set_audioClock(c0, c1, c2);
+
+	Serial.println("Step 4: SAI registers");
+
     // Step 4: SAI1 registers
     CCM_CSCMR1 = (CCM_CSCMR1 & ~(CCM_CSCMR1_SAI1_CLK_SEL_MASK))
 		   | CCM_CSCMR1_SAI1_CLK_SEL(2); // &0x03 // (0,1,2): PLL3PFD0, PLL5, PLL4
@@ -125,6 +145,8 @@ void AudioEngine::begin() {
 		    | I2S_RCR4_FSE | I2S_RCR4_FSP | I2S_RCR4_FSD;
 	I2S1_RCR5 = I2S_RCR5_WNW((32-1)) | I2S_RCR5_W0W((32-1)) | I2S_RCR5_FBT((32-1));
 
+
+	Serial.println("Step 5: DMA setup");
     // Step 5: TODO - DMA setup
 
 	dma.sourceBuffer(buffer_A, sizeof(buffer_A));
@@ -142,11 +164,14 @@ void AudioEngine::begin() {
 
 	dma.enable();
 
+	Serial.println("Step 6: Enable SAI");
 	//step 6: Enable SAI
 	I2S1_TCSR |= I2S_TCSR_FRDE; // Enable FIFO request when empty 
 
 	I2S1_TCSR |= I2S_TCSR_TE | I2S_TCSR_BCE; // Enable transmitter and bit clock
 	I2S1_RCSR |= I2S_RCSR_RE | I2S_RCSR_BCE; // Enable receiver and bit clock
+
+	Serial.println("Audio Engine Initialized!");
 }
 
 void AudioEngine::fillBuffer() {
@@ -154,7 +179,7 @@ void AudioEngine::fillBuffer() {
     for (int i=0; i < BUFFER_SIZE / 2; i++) {
         float mixedSample = 0.0f;
         for(Voice &voice : voices) {
-            if (voice.getIsActive()) {
+            if (voice.getIsActive()  && voice.getWaveform() != nullptr) {
                 anyActive = true;
                 float sample = voice.getNextSample();
                 mixedSample += sample;
@@ -182,6 +207,10 @@ void AudioEngine::fillBuffer() {
 
 void AudioEngine::noteOn(int voiceIndex, float freq, float amp) {
     voices[voiceIndex].noteOn(freq, amp);
+}
+
+void AudioEngine::setMasterVolume(float vol) {
+    masterVolume = vol;
 }
 
 void AudioEngine::fillFeedbackBuffer() {

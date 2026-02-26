@@ -12,11 +12,24 @@ AudioEngine audioEngine(I2S_BCK_PIN, I2S_LRCK_PIN, I2S_DIN_PIN);
 void setup() {
     Serial.begin(115200);
 
+    delay(2000);
+
+    if (CrashReport) {
+        Serial.print(CrashReport);
+        delay(5000);
+    }
+    
     audioEngine.begin();
+    audioEngine.setMasterVolume(0.5f);
     audioEngine.noteOn(0, 440.0f, 1.0f);
+    
+    
 }
 
-void loop() {}
+void loop() {    
+    delay(1);
+    Serial.println("Main loop running...");
+}
 
 #else
 

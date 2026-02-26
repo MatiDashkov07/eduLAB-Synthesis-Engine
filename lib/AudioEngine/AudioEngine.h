@@ -30,8 +30,14 @@ private:
 
     WaveformGenerator* waveforms[5]; // ← Array to hold different waveform generators
 
+    #ifdef ESP32_BUILD
     Voice voices[4]; // ← Array of voices for polyphony
+    #endif
 
+    #ifdef TEENSY_BUILD
+    Voice voices[1]; // ← Array of voices for polyphony
+    #endif
+    
     // Audio state (for feedback tone)
     enum AudioState {
         NORMAL_PLAYBACK,

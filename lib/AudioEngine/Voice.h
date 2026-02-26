@@ -23,6 +23,7 @@ public:
     void setFrequency(float freq);
     void setAmplitude(float amp);
     bool getIsActive() const { return isActive; }
+    WaveformGenerator* getWaveform() const { return waveform; }
 
 
 private:
