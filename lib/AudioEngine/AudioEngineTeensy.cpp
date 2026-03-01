@@ -11,10 +11,10 @@
 
 static DMAChannel dma;
 
-static int16_t buffer_A[256] __attribute__((aligned(32)));;
-static int16_t buffer_B[256] __attribute__((aligned(32)));;
+static int32_t buffer_A[256] __attribute__((aligned(32)));;
+static int32_t buffer_B[256] __attribute__((aligned(32)));;
 static volatile bool dma_playing_A = true;
-static int16_t* _fillTarget = nullptr;
+static int32_t* _fillTarget = nullptr;
 AudioEngine* AudioEngine::_instance = nullptr;
 
 const static int AUDIO_SAMPLE_RATE_EXACT = 44117.64706f; // 44.1kHz * 256 samples per buffer
@@ -28,7 +28,11 @@ AudioEngine::AudioEngine(int bck, int lrck, int din)
 
 void AudioEngine::dmaISR() {
     dma.clearInterrupt();
-	if (!_instance) return;
+    dma.clearComplete(); // <--- CRITICAL: Clear the DMA DONE flag
+    
+    _instance->isrCount++; 
+    if (!_instance) return;
+    
     if (dma_playing_A) {
         _fillTarget = buffer_A;  
         dma.sourceBuffer(buffer_B, sizeof(buffer_B));
@@ -38,8 +42,10 @@ void AudioEngine::dmaISR() {
     }
     dma_playing_A = !dma_playing_A;
     
-    _instance -> fillBuffer();
-    arm_dcache_flush_delete(_fillTarget, sizeof(buffer_A));
+    dma.enable(); // <--- CRITICAL: Re-enable DMA channel for the next block
+    
+    _instance->fillBuffer();
+    arm_dcache_flush_delete(_fillTarget, sizeof(buffer_A)); // Keep size correct (now 1024 bytes)
 }
 
 
@@ -68,21 +74,29 @@ void set_audioClock(int nfact, int32_t nmult, uint32_t ndiv, bool force = false)
 void AudioEngine::begin() {
 	_instance = this; // Set the static instance pointer for ISR access
 	Serial.println("Step 1: CCM clock");
+	Serial.printf("I2S_bckPin: %d, I2S_lrckPin: %d, I2S_dinPin: %d\n", I2S_BCK_PIN, I2S_LRCK_PIN, I2S_DIN_PIN);
 	
     //Step 1: Enable SAI1 clock
     CCM_CCGR5 |= CCM_CCGR5_SAI1(CCM_CCGR_ON);
 
 	
 	waveforms[0] = new SineWave();
+	Serial.printf("waveforms[0] ptr: %p\n", waveforms[0]);
+	if (waveforms[0]) {
+		float test = waveforms[0]->getSample(0.0f);
+		Serial.printf("getSample test: %f\n", test);
+	}
+	voices[0].setWaveform(waveforms[0]);
+	Serial.printf("voice waveform ptr: %p\n", voices[0].getWaveform());
     waveforms[1] = new TriangleWave();
     waveforms[2] = new SquareWave();
     waveforms[3] = new SawWave();
     waveforms[4] = new NoiseWave();
 
 	//Voice initialization for Teensy (mono)
-	voices[0].setWaveform(waveforms[0]);
-	voices[0].setAmplitude(0.0f);
+	voices[0].setAmplitude(1.0f);
 	voices[0].setFrequency(440.0f);
+	voices[0].noteOn(440.0f, 0.5f);
 
 
 
@@ -151,13 +165,16 @@ void AudioEngine::begin() {
 
 	dma.sourceBuffer(buffer_A, sizeof(buffer_A));
 	dma.destination(I2S1_TDR0);
-	dma.transferSize(2);
+	dma.transferSize(4);
 	dma.transferCount(256);
 	dma.interruptAtCompletion();
 	dma.attachInterrupt(AudioEngine::dmaISR);
 	dma.triggerAtHardwareEvent(DMAMUX_SOURCE_SAI1_TX);
 
 	// Start with buffer A, fill it, and flush to ensure it's in RAM before DMA reads it
+	_fillTarget = buffer_B; // Fill the non-playing buffer first
+	fillBuffer();
+	arm_dcache_flush_delete(buffer_B, sizeof(buffer_B));
 	_fillTarget = buffer_A;
 	fillBuffer();
 	arm_dcache_flush_delete(buffer_A, sizeof(buffer_A));	
@@ -176,31 +193,31 @@ void AudioEngine::begin() {
 
 void AudioEngine::fillBuffer() {
     bool anyActive = false;
-    for (int i=0; i < BUFFER_SIZE / 2; i++) {
+    for (int i=0; i < 256 / 2; i++) {
         float mixedSample = 0.0f;
         for(Voice &voice : voices) {
             if (voice.getIsActive()  && voice.getWaveform() != nullptr) {
                 anyActive = true;
-                float sample = voice.getNextSample();
-                mixedSample += sample;
+                mixedSample += voice.getNextSample();
             }
         }
         mixedSample *= masterVolume;
-        mixedSample /= sizeof(voices) / sizeof(Voice);
+		//mixedSample /= sizeof(voices) / sizeof(Voice);
 
-        int16_t sampleValue = (int16_t)(mixedSample * 32767);
-
-        _fillTarget[i * 2] = sampleValue;      
-        _fillTarget[i * 2 + 1] = sampleValue;
+        // Convert to 16-bit PCM, then shift to the upper 16 bits of the 32-bit word
+        int32_t sampleValue = (int32_t)(mixedSample * 32767.0f);
+        
+        _fillTarget[i * 2]     = sampleValue << 16; // Left channel
+        _fillTarget[i * 2 + 1] = sampleValue << 16; // Right channel
     }
 
-	if (audioState == FEEDBACK_TONE) {
+    if (audioState == FEEDBACK_TONE) {
         fillFeedbackBuffer();  
         return;
     }
     
     if (!anyActive) {
-        memset(_fillTarget, 0, sizeof(buffer_A)); // Silence if no active voices
+        memset(_fillTarget, 0, sizeof(buffer_A)); // Silence
         return;
     }
 }

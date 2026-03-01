@@ -10,7 +10,10 @@ class StateMachine;  // Forward declaration
 class Potentiometer; // Forward declaration
 
 class AudioEngine {
-    ;
+//debugging counter for DMA interrupts    
+public:
+    volatile uint32_t isrCount = 0; // Counter for DMA interrupts (for debugging)
+    
 private:
     // I2S Configuration
     int I2S_BCK_PIN;

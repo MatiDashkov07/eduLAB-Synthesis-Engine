@@ -3,14 +3,17 @@
 
 #include "AudioEngine.h"
 
-const int I2S_BCK_PIN = 22;
+const int I2S_BCK_PIN = 21;
 const int I2S_LRCK_PIN = 20;
-const int I2S_DIN_PIN = 21;
+const int I2S_DIN_PIN = 26;
 
 AudioEngine audioEngine(I2S_BCK_PIN, I2S_LRCK_PIN, I2S_DIN_PIN);
 
 void setup() {
     Serial.begin(115200);
+
+    // For debugging: Show teensy is working
+    pinMode(13, OUTPUT);
 
     delay(2000);
 
@@ -18,7 +21,7 @@ void setup() {
         Serial.print(CrashReport);
         delay(5000);
     }
-    
+
     audioEngine.begin();
     audioEngine.setMasterVolume(0.5f);
     audioEngine.noteOn(0, 440.0f, 1.0f);
@@ -27,8 +30,14 @@ void setup() {
 }
 
 void loop() {    
-    delay(1);
-    Serial.println("Main loop running...");
+    // static uint32_t lastCount = 0;
+    // delay(1000);
+    // uint32_t current = audioEngine.isrCount;
+    // Serial.printf("ISR count: %lu (delta: %lu)\n", current, current - lastCount);
+    // lastCount = current;
+
+    digitalWrite(13, !digitalRead(13)); // Toggle pin 13 for visual heartbeat
+    delay(1000);
 }
 
 #else
