@@ -11,13 +11,13 @@
 
 static DMAChannel dma;
 
-DMAMEM static int32_t buffer_A[256] __attribute__((aligned(32)));;
-DMAMEM static int32_t buffer_B[256] __attribute__((aligned(32)));;
+DMAMEM static int32_t buffer_A[256] __attribute__((aligned(32)));
+DMAMEM static int32_t buffer_B[256] __attribute__((aligned(32)));
 static volatile bool dma_playing_A = true;
 static int32_t* _fillTarget = nullptr;
 AudioEngine* AudioEngine::_instance = nullptr;
 
-const static int AUDIO_SAMPLE_RATE_EXACT = 44117.64706f; // 44.1kHz * 256 samples per buffer
+const static float AUDIO_SAMPLE_RATE_EXACT = 44117.64706f; // 44.1kHz * 256 samples per buffer
 
 
 AudioEngine::AudioEngine(int bck, int lrck, int din)
@@ -30,9 +30,9 @@ void AudioEngine::dmaISR() {
     dma.clearInterrupt();
     dma.clearComplete(); // <--- CRITICAL: Clear the DMA DONE flag
     
-    _instance->isrCount++; 
     if (!_instance) return;
-    
+    _instance->isrCount++;
+
     if (dma_playing_A) {
         _fillTarget = buffer_A;  
         dma.sourceBuffer(buffer_B, sizeof(buffer_B));
