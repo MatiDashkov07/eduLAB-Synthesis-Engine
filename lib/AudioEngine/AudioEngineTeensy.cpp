@@ -11,8 +11,8 @@
 
 static DMAChannel dma;
 
-static int32_t buffer_A[256] __attribute__((aligned(32)));;
-static int32_t buffer_B[256] __attribute__((aligned(32)));;
+DMAMEM static int32_t buffer_A[256] __attribute__((aligned(32)));;
+DMAMEM static int32_t buffer_B[256] __attribute__((aligned(32)));;
 static volatile bool dma_playing_A = true;
 static int32_t* _fillTarget = nullptr;
 AudioEngine* AudioEngine::_instance = nullptr;
@@ -96,12 +96,7 @@ void AudioEngine::begin() {
 	//Voice initialization for Teensy (mono)
 	voices[0].setAmplitude(1.0f);
 	voices[0].setFrequency(440.0f);
-	voices[0].noteOn(440.0f, 0.5f);
-
-
-
-	// Step 2: TODO - Pin mux
-
+	voices[0].noteOn(440.0f, 0.1f);
 
 
 	Serial.println("Step 3: PLL");
@@ -131,6 +126,8 @@ void AudioEngine::begin() {
 		& ~(IOMUXC_GPR_GPR1_SAI1_MCLK1_SEL_MASK))
 		| (IOMUXC_GPR_GPR1_SAI1_MCLK_DIR | IOMUXC_GPR_GPR1_SAI1_MCLK1_SEL(0));
 
+
+	// Step 5:Pin mux
 	*(portConfigRegister(23)) = 3; // MCLK - hardcoded, SAI1 only on pin 23
 	*(portConfigRegister(I2S_BCK_PIN)) = 3; // ALT3 for SAI1
 	*(portConfigRegister(I2S_LRCK_PIN)) = 3; // ALT3 for SAI1

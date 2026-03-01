@@ -5,7 +5,7 @@
 
 const int I2S_BCK_PIN = 21;
 const int I2S_LRCK_PIN = 20;
-const int I2S_DIN_PIN = 26;
+const int I2S_DIN_PIN = 7;
 
 AudioEngine audioEngine(I2S_BCK_PIN, I2S_LRCK_PIN, I2S_DIN_PIN);
 
@@ -23,8 +23,8 @@ void setup() {
     }
 
     audioEngine.begin();
-    audioEngine.setMasterVolume(0.5f);
-    audioEngine.noteOn(0, 440.0f, 1.0f);
+    audioEngine.setMasterVolume(0.1f);
+    audioEngine.noteOn(0, 440.0f, 0.1f);
     
     
 }
