@@ -34,7 +34,7 @@ void DisplayManager::begin() {
     display.clearDisplay();
     display.setTextColor(SSD1306_WHITE);
     drawCenteredText("eduLAB", 8, 2);    
-    drawCenteredText("v3.8 OOP", 24, 1);   
+    drawCenteredText("v5.0 Teensy", 24, 1);   
     display.display();
     delay(2000);
     display.clearDisplay();

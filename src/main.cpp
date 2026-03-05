@@ -10,6 +10,11 @@
 #include "../include/Utils.h"
 
 
+// ==========================================
+// HARDWARE CONFIGURATION
+// ==========================================
+
+
 const int I2S_BCK_PIN = 21;
 const int I2S_LRCK_PIN = 20;
 const int I2S_DIN_PIN = 7;
@@ -19,6 +24,12 @@ const int PIN_SW = 35;
 const int PIN_CLK = 37;
 const int PIN_DT = 36;
 
+
+// ==========================================
+// OBJECT INSTANCES
+// ==========================================
+
+
 AudioEngine audioEngine(I2S_BCK_PIN, I2S_LRCK_PIN, I2S_DIN_PIN);
 Potentiometer potPitch(POT_PIN_PITCH);
 Potentiometer potAmp(POT_PIN_AMP);
@@ -26,6 +37,12 @@ StateMachine stateMachine;
 RotaryEncoder encoder(PIN_CLK, PIN_DT);
 Button button(PIN_SW);
 DisplayManager displayManager;
+
+
+// ==========================================
+// SETUP
+// ==========================================
+
 
 void setup() {
     Serial.begin(115200);
@@ -54,6 +71,12 @@ void setup() {
     button.begin();
 
 }
+
+
+// ==========================================
+// MAIN LOOP
+// ==========================================
+
 
 void loop() {        
     digitalWrite(13, HIGH); // For debugging: Show teensy is alive

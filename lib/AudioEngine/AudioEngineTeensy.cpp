@@ -125,16 +125,8 @@ void AudioEngine::begin() {
 		   | CCM_CS1CDR_SAI1_CLK_PRED(n1-1) // &0x07
 		   | CCM_CS1CDR_SAI1_CLK_PODF(n2-1); // &0x3f
 
-	// // Select MCLK
-	// IOMUXC_GPR_GPR1 = (IOMUXC_GPR_GPR1
-	// 	& ~(IOMUXC_GPR_GPR1_SAI1_MCLK1_SEL_MASK))
-	// 	| (IOMUXC_GPR_GPR1_SAI1_MCLK_DIR | IOMUXC_GPR_GPR1_SAI1_MCLK1_SEL(0));
-
-
-	// Step 5: Pin Mux AND Pad Control (Slew Rate Limit & Drive Strength)
-	// *(portConfigRegister(23)) = 3; 
-	// *(portControlRegister(23)) = 0x1088; // Slew Rate Slow, DSE Medium-Low
-
+	
+	//pin MUXing for SAI1 (I2S)
 	// BCK
 	*(portConfigRegister(I2S_BCK_PIN)) = 3; 
 	*(portControlRegister(I2S_BCK_PIN)) = 0x1088; 
@@ -203,8 +195,6 @@ void AudioEngine::begin() {
 }
 
 void AudioEngine::fillBuffer() {
-    bool anyActive = false;
-	
 	if (audioState == FEEDBACK_TONE) {
 			fillFeedbackBuffer();  
 			return;
@@ -215,11 +205,10 @@ void AudioEngine::fillBuffer() {
 		return;
 	}
 	
-    for (int i=0; i < BUFFER_SIZE / 2; i++) {
+	for (size_t i=0; i < BUFFER_SIZE / 2; i++) {
         float mixedSample = 0.0f;
         for(Voice &voice : voices) {
             if (voice.getIsActive()  && voice.getWaveform() != nullptr) {
-                anyActive = true;
                 mixedSample += voice.getNextSample();
             }
         }
@@ -286,15 +275,15 @@ void AudioEngine::playFeedbackTone(float frequency, int durationMs) {
     audioState = FEEDBACK_TONE;
     feedbackFrequency = frequency;
     feedbackSamplesRemaining = (durationMs / 1000.0) * SAMPLE_RATE;
-    for (int i = 0; i < sizeof(voices) / sizeof(Voice); i++) {
+    for (int i = 0; i < (int)(sizeof(voices) / sizeof(Voice)); i++) {
         setFrequency(i, frequency);
     }
 }
 
 void AudioEngine::fillFeedbackBuffer() {
-    static float feedbackPhase = 0;  
-    
-    for (int i = 0; i < BUFFER_SIZE / 2; i++) {
+	static float feedbackPhase = 0;  
+	
+	for (int i = 0; i < BUFFER_SIZE / 2; i++) {
         if (feedbackSamplesRemaining <= 0) {
             audioState = NORMAL_PLAYBACK;
             feedbackPhase = 0;  
