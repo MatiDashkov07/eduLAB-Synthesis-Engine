@@ -120,7 +120,6 @@ void loop() {
     // 5. UPDATE AUDIO ENGINE with latest state and potentiometer values
     audioEngine.update(stateMachine, potPitch, potAmp);
 
-    int selectedMode = stateMachine.getMenu().getSelectedMode();
     int maxFreq = 20000;
     float currentFrequency = mapLogarithmicAsymmetric(potPitch.getValue(), 20.0f, maxFreq);
     
