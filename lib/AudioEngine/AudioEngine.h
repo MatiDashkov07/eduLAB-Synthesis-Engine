@@ -38,7 +38,7 @@ private:
     #endif
 
     #ifdef TEENSY_BUILD
-    Voice voices[1]; // ← Array of voices for polyphony
+    Voice voices[4]; // ← Array of voices for polyphony
     #endif
     
     // Audio state (for feedback tone)
@@ -54,7 +54,14 @@ public:
     AudioEngine(int bck, int lrck, int din);  // ← Constructor
 
     void begin();
+
+    #ifdef ESP32_BUILD
     void update(const StateMachine &stateMachine, const Potentiometer &potPitch, const Potentiometer &potTone);
+    #endif
+
+    #ifdef TEENSY_BUILD
+    void update(const StateMachine &stateMachine, const Potentiometer &potPitch, const Potentiometer &potAmp);
+    #endif
     
     void setWaveform(int voiceIndex, WaveformGenerator* waveform);
     void setFrequency(int voiceIndex, float freq);     

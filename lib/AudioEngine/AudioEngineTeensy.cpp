@@ -1,12 +1,16 @@
 #ifdef TEENSY_BUILD
 
 #include "AudioEngine.h"
+#include "Potentiometer.h"
+#include "../../include/Utils.h"
 #include "Voice.h"
 #include "Waveforms/Waveforms.h"
 #include <Arduino.h>
 #include <imxrt.h>
 #include <arm_math.h>
 #include <DMAChannel.h>
+#include "../../include/Consts.h"
+#include "StateMachine.h"
 
 
 static DMAChannel dma;
@@ -17,7 +21,7 @@ static volatile bool dma_playing_A = true;
 static int32_t* _fillTarget = nullptr;
 AudioEngine* AudioEngine::_instance = nullptr;
 
-const static float AUDIO_SAMPLE_RATE_EXACT = 44117.64706f; // 44.1kHz * 256 samples per buffer
+StateMachine::State volatile currentState = StateMachine::MUTE; // Default to MUTE until we get a state from the main loop
 
 
 AudioEngine::AudioEngine(int bck, int lrck, int din)
@@ -81,27 +85,27 @@ void AudioEngine::begin() {
 
 	
 	waveforms[0] = new SineWave();
-	Serial.printf("waveforms[0] ptr: %p\n", waveforms[0]);
-	if (waveforms[0]) {
-		float test = waveforms[0]->getSample(0.0f);
-		Serial.printf("getSample test: %f\n", test);
-	}
-	voices[0].setWaveform(waveforms[0]);
-	Serial.printf("voice waveform ptr: %p\n", voices[0].getWaveform());
     waveforms[1] = new TriangleWave();
     waveforms[2] = new SquareWave();
     waveforms[3] = new SawWave();
     waveforms[4] = new NoiseWave();
 
-	//Voice initialization for Teensy (mono)
-	voices[0].setAmplitude(1.0f);
-	voices[0].setFrequency(440.0f);
-	voices[0].noteOn(440.0f, 0.1f);
+	for (int i = 0; i < 4; i++) {
+        voices[i] = Voice(waveforms[0], 0.0f, 0.0f);
+    }
+
+    //test to see if polyphony works
+    float freq = 440.0f; // A4
+    noteOn(0, freq, 1.0f); 
+    noteOn(1, 1.25 * freq, 1.0f); 
+    noteOn(2, 1.5 * freq, 1.0f); 
+	noteOn(3, 1.875 * freq, 1.0f);
+
 
 
 	Serial.println("Step 3: PLL");
     // Step 3: PLL configuration
-    int fs = AUDIO_SAMPLE_RATE_EXACT;
+    int fs = SAMPLE_RATE; // Desired sample rate (e.g., 44117.64706 for 44.1kHz * 256 samples);
 	// PLL between 27*24 = 648MHz und 54*24=1296MHz
 	int n1 = 4; //SAI prescaler 4 => (n1*n2) = multiple of 4
 	int n2 = 1 + (24000000 * 27) / (fs * 256 * n1);
@@ -121,24 +125,34 @@ void AudioEngine::begin() {
 		   | CCM_CS1CDR_SAI1_CLK_PRED(n1-1) // &0x07
 		   | CCM_CS1CDR_SAI1_CLK_PODF(n2-1); // &0x3f
 
-	// Select MCLK
-	IOMUXC_GPR_GPR1 = (IOMUXC_GPR_GPR1
-		& ~(IOMUXC_GPR_GPR1_SAI1_MCLK1_SEL_MASK))
-		| (IOMUXC_GPR_GPR1_SAI1_MCLK_DIR | IOMUXC_GPR_GPR1_SAI1_MCLK1_SEL(0));
+	// // Select MCLK
+	// IOMUXC_GPR_GPR1 = (IOMUXC_GPR_GPR1
+	// 	& ~(IOMUXC_GPR_GPR1_SAI1_MCLK1_SEL_MASK))
+	// 	| (IOMUXC_GPR_GPR1_SAI1_MCLK_DIR | IOMUXC_GPR_GPR1_SAI1_MCLK1_SEL(0));
 
 
-	// Step 5:Pin mux
-	*(portConfigRegister(23)) = 3; // MCLK - hardcoded, SAI1 only on pin 23
-	*(portConfigRegister(I2S_BCK_PIN)) = 3; // ALT3 for SAI1
-	*(portConfigRegister(I2S_LRCK_PIN)) = 3; // ALT3 for SAI1
-	*(portConfigRegister(I2S_DIN_PIN)) = 3; // ALT3 for SAI1
+	// Step 5: Pin Mux AND Pad Control (Slew Rate Limit & Drive Strength)
+	// *(portConfigRegister(23)) = 3; 
+	// *(portControlRegister(23)) = 0x1088; // Slew Rate Slow, DSE Medium-Low
 
+	// BCK
+	*(portConfigRegister(I2S_BCK_PIN)) = 3; 
+	*(portControlRegister(I2S_BCK_PIN)) = 0x1088; 
+
+	// LRCK
+	*(portConfigRegister(I2S_LRCK_PIN)) = 3; 
+	*(portControlRegister(I2S_LRCK_PIN)) = 0x1088; 
+
+	// DIN
+	*(portConfigRegister(I2S_DIN_PIN)) = 3; 
+	*(portControlRegister(I2S_DIN_PIN)) = 0x1088;
+	
 	int rsync = 0;
 	int tsync = 1;
 
 	I2S1_TMR = 0;
 	//I2S1_TCSR = (1<<25); //Reset
-	I2S1_TCR1 = I2S_TCR1_RFW(1);
+	I2S1_TCR1 = I2S_TCR1_RFW(16); // FIFO request when 16 or fewer words remain
 	I2S1_TCR2 = I2S_TCR2_SYNC(tsync) | I2S_TCR2_BCP // sync=0; tx is async;
 		    | (I2S_TCR2_BCD | I2S_TCR2_DIV((1)) | I2S_TCR2_MSEL(1));
 	I2S1_TCR3 = I2S_TCR3_TCE;
@@ -148,7 +162,7 @@ void AudioEngine::begin() {
 
 	I2S1_RMR = 0;
 	//I2S1_RCSR = (1<<25); //Reset
-	I2S1_RCR1 = I2S_RCR1_RFW(1);
+	I2S1_RCR1 = I2S_RCR1_RFW(16);
 	I2S1_RCR2 = I2S_RCR2_SYNC(rsync) | I2S_RCR2_BCP  // sync=0; rx is async;
 		    | (I2S_RCR2_BCD | I2S_RCR2_DIV((1)) | I2S_RCR2_MSEL(1));
 	I2S1_RCR3 = I2S_RCR3_RCE;
@@ -190,7 +204,18 @@ void AudioEngine::begin() {
 
 void AudioEngine::fillBuffer() {
     bool anyActive = false;
-    for (int i=0; i < 256 / 2; i++) {
+	
+	if (audioState == FEEDBACK_TONE) {
+			fillFeedbackBuffer();  
+			return;
+		}
+
+	if(currentState == StateMachine::MUTE) {
+		memset(_fillTarget, 0, sizeof(buffer_A)); // Silence
+		return;
+	}
+	
+    for (int i=0; i < BUFFER_SIZE / 2; i++) {
         float mixedSample = 0.0f;
         for(Voice &voice : voices) {
             if (voice.getIsActive()  && voice.getWaveform() != nullptr) {
@@ -199,24 +224,42 @@ void AudioEngine::fillBuffer() {
             }
         }
         mixedSample *= masterVolume;
-		//mixedSample /= sizeof(voices) / sizeof(Voice);
+		mixedSample /= sizeof(voices) / sizeof(Voice);
 
         // Convert to 16-bit PCM, then shift to the upper 16 bits of the 32-bit word
         int32_t sampleValue = (int32_t)(mixedSample * 32767.0f);
         
-        _fillTarget[i * 2]     = sampleValue << 16; // Left channel
-        _fillTarget[i * 2 + 1] = sampleValue << 16; // Right channel
+        _fillTarget[i * 2]     = (int32_t)((uint32_t)sampleValue << 16);
+		_fillTarget[i * 2 + 1] = (int32_t)((uint32_t)sampleValue << 16);
     }
+}
 
-    if (audioState == FEEDBACK_TONE) {
-        fillFeedbackBuffer();  
-        return;
-    }
+void AudioEngine::update(const StateMachine &stateMachine, const Potentiometer &potPitch, const Potentiometer &potAmp) {
+	currentState = stateMachine.getState();
+	if (currentState == StateMachine::MUTE) {
+		return;
+	}
+	int selectedMode = stateMachine.getMenu().getSelectedMode();
+	if (selectedMode >=0 && selectedMode < 5) {
+		voices[0].setWaveform(waveforms[selectedMode]);
+		voices[1].setWaveform(waveforms[selectedMode]);
+		voices[2].setWaveform(waveforms[selectedMode]);
+		voices[3].setWaveform(waveforms[selectedMode]);
+	} else {
+		currentState = StateMachine::MUTE; // Invalid mode, force mute
+	}
+
+	float vol = potAmp.getValue() / 4095.0f;
+    setMasterVolume(vol * 0.5f); 
+    int maxFreq =  20000; 
     
-    if (!anyActive) {
-        memset(_fillTarget, 0, sizeof(buffer_A)); // Silence
-        return;
-    }
+    
+    //test to see if polyphony works with different frequencies
+    float baseFreq = mapLogarithmicAsymmetric(potPitch.getValue(), 20.0f, maxFreq);
+    setFrequency(0, baseFreq);
+	setFrequency(1, 1.25 * baseFreq);
+	setFrequency(2, 1.5 * baseFreq);
+	setFrequency(3, 1.875 * baseFreq);
 }
 
 void AudioEngine::noteOn(int voiceIndex, float freq, float amp) {
@@ -227,8 +270,58 @@ void AudioEngine::setMasterVolume(float vol) {
     masterVolume = vol;
 }
 
+void AudioEngine::setWaveform(int voiceIndex, WaveformGenerator* waveform) {
+    voices[voiceIndex].setWaveform(waveform);
+}
+
+void AudioEngine::setFrequency(int voiceIndex, float freq) {
+    voices[voiceIndex].setFrequency(freq);
+}
+
+void AudioEngine::setAmplitude(int voiceIndex, float amp) {
+    voices[voiceIndex].setAmplitude(amp);
+}
+
+void AudioEngine::playFeedbackTone(float frequency, int durationMs) {
+    audioState = FEEDBACK_TONE;
+    feedbackFrequency = frequency;
+    feedbackSamplesRemaining = (durationMs / 1000.0) * SAMPLE_RATE;
+    for (int i = 0; i < sizeof(voices) / sizeof(Voice); i++) {
+        setFrequency(i, frequency);
+    }
+}
+
 void AudioEngine::fillFeedbackBuffer() {
-    // TODO: implement for Teensy in Phase 3
+    static float feedbackPhase = 0;  
+    
+    for (int i = 0; i < BUFFER_SIZE / 2; i++) {
+        if (feedbackSamplesRemaining <= 0) {
+            audioState = NORMAL_PLAYBACK;
+            feedbackPhase = 0;  
+            _fillTarget[i * 2] = 0;
+            _fillTarget[i * 2 + 1] = 0;
+            continue;
+        }
+
+        // OLD: fixed 0.3 amplitude
+        // float sample = sin(feedbackPhase) * 0.3;
+        
+        // NEW: respect masterVolume, but cap at safe level
+        float feedbackAmplitude = min(masterVolume * 0.5f, 0.15f);  // Max 15% even if volume is high
+        float sample = sin(feedbackPhase) * feedbackAmplitude;
+        
+        int32_t sampleValue = (int32_t)(sample * 32767);
+
+        _fillTarget[i * 2]     = (int32_t)((uint32_t)sampleValue << 16);
+		_fillTarget[i * 2 + 1] = (int32_t)((uint32_t)sampleValue << 16);
+
+        feedbackPhase += 2 * PI * feedbackFrequency / SAMPLE_RATE;
+        if (feedbackPhase >= 2*PI) {
+            feedbackPhase -= 2*PI;
+        }
+
+        feedbackSamplesRemaining--;
+    }
 }
 
 

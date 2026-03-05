@@ -46,11 +46,19 @@ void RotaryEncoder::begin() {
     Serial.println("[ENC] Initialized with state machine decoder");
 }
 
+#ifdef ESP32_BUILD
 void IRAM_ATTR RotaryEncoder::handleInterruptStatic() {
     if (instancePointer) {
         instancePointer->updatePosition();
     }
 }
+#else
+void RotaryEncoder::handleInterruptStatic() {
+    if (instancePointer) {
+        instancePointer->updatePosition();
+    }
+}
+#endif
 
 void RotaryEncoder::updatePosition() {
     unsigned long currentTime = millis();

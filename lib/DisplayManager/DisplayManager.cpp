@@ -7,19 +7,29 @@
 #define SCREEN_HEIGHT 32
 #define OLED_RESET    -1
 #define SCREEN_ADDRESS 0x3C
-#define I2C_SDA 4
-#define I2C_SCL 5
+#define I2C_SDA 24
+#define I2C_SCL 25
 
 //constructor
-DisplayManager::DisplayManager() 
-    : display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET), lastUpdateTime(0) {
-}
+#ifdef ESP32_BUILD
+    DisplayManager::DisplayManager() : display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET), lastUpdateTime(0) {}
+#else
+    DisplayManager::DisplayManager() : display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire2, OLED_RESET), lastUpdateTime(0) {}
+#endif
 
 void DisplayManager::begin() {
-    Wire.begin(I2C_SDA, I2C_SCL);
+    #ifdef ESP32_BUILD
+        Wire.begin(I2C_SDA, I2C_SCL);
+    #else
+        Wire2.begin();
+    #endif
+
     if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
-        for (;;);
+        Serial.println("OLED init FAILED");
+    return;
     }
+
+    Serial.println("OLED init OK");
     
     display.clearDisplay();
     display.setTextColor(SSD1306_WHITE);
