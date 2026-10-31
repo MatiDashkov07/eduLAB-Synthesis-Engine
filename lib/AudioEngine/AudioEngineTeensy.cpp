@@ -97,9 +97,9 @@ void AudioEngine::begin() {
     //test to see if polyphony works
     float freq = 440.0f; // A4
     noteOn(0, freq, 1.0f); 
-    noteOn(1, 1.25 * freq, 1.0f); 
-    noteOn(2, 1.5 * freq, 1.0f); 
-	noteOn(3, 1.875 * freq, 1.0f);
+    // noteOn(1, 1.25 * freq, 1.0f); 
+    // noteOn(2, 1.5 * freq, 1.0f); 
+	// noteOn(3, 1.875 * freq, 1.0f);
 
 
 

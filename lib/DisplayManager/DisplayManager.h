@@ -2,16 +2,42 @@
 #define DISPLAYMANAGER_H
 
 #include <Arduino.h>
-#include <Wire.h>
 #include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+#include "ILI9488_t3.h" // For Teensy display
 
 class StateMachine;
 class Menu;
 
 class DisplayManager {
 private:
-    Adafruit_SSD1306 display;
+    #ifdef ESP32_BUILD
+        #include <Adafruit_SSD1306.h>
+        #include <Wire.h>
+        static const int SCREEN_WIDTH = 128;
+        static const int SCREEN_HEIGHT = 32;
+        static const int OLED_RESET = -1;
+        static const int SCREEN_ADDRESS = 0x3C;
+        static const int I2C_SDA = 24;
+        static const int I2C_SCL = 25;
+        Adafruit_SSD1306 display;
+    #endif
+    #ifdef TEENSY_BUILD
+        static const int SCREEN_WIDTH = 480;
+        static const int SCREEN_HEIGHT = 320;
+        static const int TFT_RST = 8;
+        static const int TFT_DC = 9;
+        static const int TFT_CS = 10;
+        ILI9488_t3 display;
+
+        // Scale the 128x32 OLED layout up onto the TFT, centered
+        static const int S = 3;
+        static const int OLED_W = 128;
+        static const int OLED_H = 32;
+        static const int OX = (SCREEN_WIDTH - OLED_W * S) / 2;   // 48
+        static const int OY = (SCREEN_HEIGHT - OLED_H * S) / 2;  // 112
+        int sx(int x) const { return OX + x * S; }
+        int sy(int y) const { return OY + y * S; }
+    #endif
     unsigned long lastUpdateTime;
     static const unsigned long UPDATE_INTERVAL = 50;
 

@@ -1,3 +1,4 @@
+#ifdef ESP32_BUILD
 #include "DisplayManager.h"
 #include "StateMachine.h" 
 #include "Menu.h"                  
@@ -168,3 +169,4 @@ void DisplayManager::drawWaveIcon(int mode, int x, int y) {
             break;
     }
 }
+#endif
