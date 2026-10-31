@@ -25,7 +25,7 @@ inline float mapLogarithmic(int adcValue, float minFreq, float maxFreq) {
  * 
  * Snaps to exact min/max when ADC is near endpoints.
  * Compensates for:
- * - ESP32 ADC non-linearity (doesn't reach exact 0/4095)
+ * - ADC/pot non-linearity (readings don't reach exact 0/4095)
  * - EMA filter lag (filtered value lags behind actual pot position)
  * 
  * @param adcValue: Raw ADC reading (0-4095)

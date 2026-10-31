@@ -61,7 +61,7 @@ void setup() {
 
     analogReadResolution(12);
 
-    displayManager.begin();
+    displayManager.begin(); // TFT + splash screen
     potPitch.begin();
     potAmp.begin();
     encoder.begin();

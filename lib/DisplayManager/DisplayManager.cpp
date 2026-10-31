@@ -8,7 +8,7 @@ DisplayManager::DisplayManager()
 
 
 void DisplayManager::begin() {
-    Serial.println("OLED init OK");
+    Serial.println("TFT init OK");
     display.begin();
     display.setRotation(1); // Landscape orientation
 
@@ -25,7 +25,7 @@ void DisplayManager::begin() {
     display.fillScreen(ILI9488_BLACK);
     display.setTextColor(ILI9488_WHITE);
     drawCenteredText("eduLAB", 8, 2);
-    drawCenteredText("v5.0 Teensy", 24, 1);
+    drawCenteredText("v6.0 Teensy", 24, 1);
     display.updateScreen();
     delay(2000);
     display.fillScreen(ILI9488_BLACK);
