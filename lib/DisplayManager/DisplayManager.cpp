@@ -12,8 +12,13 @@ void DisplayManager::begin() {
     display.begin();
     display.setRotation(1); // Landscape orientation
 
-    IOMUXC_SW_PAD_CTL_PAD_GPIO_B0_03 = 136;
-    IOMUXC_SW_PAD_CTL_PAD_GPIO_B0_02 = 136;
+    // DSE=1 is the weakest drive strength (R0 ~ 150 ohm); it tames SPI ringing on the breadboard.
+    // Must stay after display.begin(): the library configures these pads during begin().
+    // Read-modify-write so only the DSE field changes.
+    IOMUXC_SW_PAD_CTL_PAD_GPIO_B0_03 = (IOMUXC_SW_PAD_CTL_PAD_GPIO_B0_03 & ~IOMUXC_PAD_DSE(7)) | IOMUXC_PAD_DSE(1); // SCK
+    Serial.printf("GPIO_B0_03 (SCK) pad: 0x%08lX\n", (unsigned long)IOMUXC_SW_PAD_CTL_PAD_GPIO_B0_03); // TEMP-VERIFY
+    IOMUXC_SW_PAD_CTL_PAD_GPIO_B0_02 = (IOMUXC_SW_PAD_CTL_PAD_GPIO_B0_02 & ~IOMUXC_PAD_DSE(7)) | IOMUXC_PAD_DSE(1); // MOSI
+    Serial.printf("GPIO_B0_02 (MOSI) pad: 0x%08lX\n", (unsigned long)IOMUXC_SW_PAD_CTL_PAD_GPIO_B0_02); // TEMP-VERIFY
 
     display.useFrameBuffer(true);
 

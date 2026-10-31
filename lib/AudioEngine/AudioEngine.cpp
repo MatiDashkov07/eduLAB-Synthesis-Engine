@@ -124,17 +124,22 @@ void AudioEngine::begin() {
 
 	
 	//pin MUXing for SAI1 (I2S)
+	// Pad control: DSE=1 (weakest drive), SPEED=2, slow slew, keeper enabled.
+	// The series resistors on the breadboard are still required.
+	constexpr uint32_t I2S_PAD_CTL = IOMUXC_PAD_PKE | IOMUXC_PAD_SPEED(2) | IOMUXC_PAD_DSE(1);
+	static_assert(I2S_PAD_CTL == 0x1088, "I2S pad control value must stay 0x1088");
+
 	// BCK
 	*(portConfigRegister(I2S_BCK_PIN)) = 3; 
-	*(portControlRegister(I2S_BCK_PIN)) = 0x1088; 
+	*(portControlRegister(I2S_BCK_PIN)) = I2S_PAD_CTL; 
 
 	// LRCK
 	*(portConfigRegister(I2S_LRCK_PIN)) = 3; 
-	*(portControlRegister(I2S_LRCK_PIN)) = 0x1088; 
+	*(portControlRegister(I2S_LRCK_PIN)) = I2S_PAD_CTL; 
 
 	// DIN
 	*(portConfigRegister(I2S_DIN_PIN)) = 3; 
-	*(portControlRegister(I2S_DIN_PIN)) = 0x1088;
+	*(portControlRegister(I2S_DIN_PIN)) = I2S_PAD_CTL;
 	
 	int rsync = 0;
 	int tsync = 1;
