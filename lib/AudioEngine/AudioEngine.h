@@ -20,15 +20,7 @@ private:
     int I2S_LRCK_PIN;
     int I2S_DIN_PIN;
 
-    // Audio buffer
-    int16_t audioBuffer[BUFFER_SIZE];
-
     // Waveform synthesis
-    //WaveformGenerator* currentWaveform;
-    //float phase;
-    //float frequency;        
-    //float phaseIncrement;
-    //float amplitude;
     float masterVolume;
 
     WaveformGenerator* waveforms[5]; // ← Array to hold different waveform generators
@@ -62,7 +54,6 @@ public:
 
 private:
      void fillBuffer();             
-    //void updatePhaseIncrement();  
     void fillFeedbackBuffer(); 
 
     static AudioEngine* _instance;

@@ -92,12 +92,11 @@ void AudioEngine::begin() {
         voices[i] = Voice(waveforms[0], 0.0f, 0.0f);
     }
 
-    //test to see if polyphony works
+    // Polyphony is disabled on purpose: only voice 0 is activated here.
+    // Voices 1-3 still receive frequencies in update() but stay silent.
+    // A UI polyphony on/off toggle is planned.
     float freq = 440.0f; // A4
     noteOn(0, freq, 1.0f); 
-    // noteOn(1, 1.25 * freq, 1.0f); 
-    // noteOn(2, 1.5 * freq, 1.0f); 
-	// noteOn(3, 1.875 * freq, 1.0f);
 
 
 
@@ -162,7 +161,6 @@ void AudioEngine::begin() {
 
 
 	Serial.println("Step 5: DMA setup");
-    // Step 5: TODO - DMA setup
 
 	dma.sourceBuffer(buffer_A, sizeof(buffer_A));
 	dma.destination(I2S1_TDR0);
@@ -290,9 +288,6 @@ void AudioEngine::fillFeedbackBuffer() {
             continue;
         }
 
-        // OLD: fixed 0.3 amplitude
-        // float sample = sin(feedbackPhase) * 0.3;
-        
         // NEW: respect masterVolume, but cap at safe level
         float feedbackAmplitude = min(masterVolume * 0.5f, 0.15f);  // Max 15% even if volume is high
         float sample = sin(feedbackPhase) * feedbackAmplitude;

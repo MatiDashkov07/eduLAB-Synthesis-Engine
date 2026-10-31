@@ -2,7 +2,6 @@
 #define DISPLAYMANAGER_H
 
 #include <Arduino.h>
-#include <Adafruit_GFX.h>
 #include "ILI9488_t3.h" // For Teensy display
 
 class StateMachine;
