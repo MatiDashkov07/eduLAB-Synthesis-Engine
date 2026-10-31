@@ -1,5 +1,4 @@
 #include <Arduino.h>
-#ifdef TEENSY_BUILD
 
 
 #include "AudioEngine.h"
@@ -124,5 +123,3 @@ void loop() {
 
     delay(10); // Small delay to prevent overwhelming the CPU with state updates
 }
-
-#endif

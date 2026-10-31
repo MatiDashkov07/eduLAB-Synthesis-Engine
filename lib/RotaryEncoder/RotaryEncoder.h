@@ -22,11 +22,7 @@ private:
     static const unsigned long DEBOUNCE_DELAY = 2;  // ms
     
     // ISR helper
-    #ifdef ESP32_BUILD
-    static void IRAM_ATTR handleInterruptStatic();
-    #else
     static void handleInterruptStatic();
-    #endif
     void updatePosition();
     
     // Lookup table for state machine

@@ -33,13 +33,7 @@ private:
 
     WaveformGenerator* waveforms[5]; // ← Array to hold different waveform generators
 
-    #ifdef ESP32_BUILD
     Voice voices[4]; // ← Array of voices for polyphony
-    #endif
-
-    #ifdef TEENSY_BUILD
-    Voice voices[4]; // ← Array of voices for polyphony
-    #endif
     
     // Audio state (for feedback tone)
     enum AudioState {
@@ -55,13 +49,7 @@ public:
 
     void begin();
 
-    #ifdef ESP32_BUILD
-    void update(const StateMachine &stateMachine, const Potentiometer &potPitch, const Potentiometer &potTone);
-    #endif
-
-    #ifdef TEENSY_BUILD
     void update(const StateMachine &stateMachine, const Potentiometer &potPitch, const Potentiometer &potAmp);
-    #endif
     
     void setWaveform(int voiceIndex, WaveformGenerator* waveform);
     void setFrequency(int voiceIndex, float freq);     
@@ -77,10 +65,8 @@ private:
     //void updatePhaseIncrement();  
     void fillFeedbackBuffer(); 
 
-    #ifdef TEENSY_BUILD
     static AudioEngine* _instance;
     static void dmaISR();  
-    #endif
 };
 
 #endif
